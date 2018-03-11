@@ -1,0 +1,6 @@
+Goals for this project:
+Copy mechanics from xcom2.
+- Combat, enemies and allies
+- Classes
+
+Need some dummies to attack.
