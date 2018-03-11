@@ -14,7 +14,7 @@ public class Soldier : MonoBehaviour {
     /// <summary>
     /// Which slot it occupies
     /// </summary>
-    GridSlot curPositionSlot;
+    internal GridSlot curPositionSlot { get; private set; }
 
     int soldierId = 0;
 

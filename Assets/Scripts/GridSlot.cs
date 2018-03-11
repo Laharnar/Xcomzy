@@ -58,4 +58,8 @@ public class GridSlot : MonoBehaviour {
     private void SetLayer() {
         gameObject.layer = LayerMask.NameToLayer(gridLayerName);
     }
+
+    internal bool HasEnemy() {
+        return taken != null && taken.allianceId != 0; // 0:player
+    }
 }
