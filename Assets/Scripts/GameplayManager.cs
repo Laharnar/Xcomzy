@@ -47,8 +47,11 @@ public class AllianceUnits {
 /// Controls enemy turn/player turn cycle and player's soldier cycle
 /// </summary>
 public class GameplayManager : MonoBehaviour {
+    public static GameplayManager m;
 
     AllianceUnits[] flags = new AllianceUnits[2];
+
+    public AllianceUnits playerFlag { get { return flags[0]; } }
 
     bool clickedEnemyOnce = false;
 
@@ -56,6 +59,9 @@ public class GameplayManager : MonoBehaviour {
 
     // Use this for initialization
     void Start () {
+
+        m = this;
+
         for (int i = 0; i < flags.Length; i++) {
             flags[i] = new AllianceUnits();
         }
@@ -115,6 +121,11 @@ public class GameplayManager : MonoBehaviour {
         // makes sure you can't do mouse+1 attack
         if (attackCommand != lastCommand && lastCommand!= 0) {
             clickedEnemyOnce = false;
+        }
+
+        // tabbing swaps units
+        if (Input.GetKeyDown(KeyCode.Tab)) {
+            flags[0].activePlayerSoldier = (flags[0].activePlayerSoldier + 1) % flags[0].units.Count;
         }
     }
 }
