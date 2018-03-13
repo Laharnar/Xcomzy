@@ -19,7 +19,7 @@ public class GameplayManager : MonoBehaviour {
     int attackCommand = 0;
 
     // Use this for initialization
-    void Start () {
+    void Start() {
 
         m = this;
 
@@ -36,7 +36,7 @@ public class GameplayManager : MonoBehaviour {
         for (int i = 0; i < flags.Length; i++) {
             flags[i].SnapAllUnitsToGround();
         }
-	}
+    }
 
     static GridSlot GetGridUnderMouse() {
         Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
@@ -49,7 +49,7 @@ public class GameplayManager : MonoBehaviour {
     }
 
     // Update is called once per frame
-    void Update () {
+    void Update() {
         int lastCommand = attackCommand;
         // *** PLAYER ***
         // Right click on any slot moves active unit there.
@@ -69,6 +69,13 @@ public class GameplayManager : MonoBehaviour {
                 }
             } else {
                 playerFlag.ActiveSoldier.MoveToSlot(hitSlot);
+                // enemies in overwatch fire at player's soldier when it moves.
+                for (int i = 0; i < flags[1].units.Count; i++) {
+                    if (flags[1].units[i].inOverwatch) {
+                        flags[1].units[i].AttackSlot(playerFlag.ActiveSoldier.curPositionSlot);
+                    }
+                }
+
                 playerFlag.NextSoldier();
             }
         }
@@ -87,7 +94,7 @@ public class GameplayManager : MonoBehaviour {
         }
 
         // grenade throw
-        if (hitSlot && Input.GetKeyDown(KeyCode.Alpha2)) {
+        if (hitSlot && Input.GetKeyDown(KeyCode.Alpha3)) {
             attackCommand = 3;
             if (!clickedEnemyOnce) {
                 clickedEnemyOnce = true;
@@ -96,16 +103,41 @@ public class GameplayManager : MonoBehaviour {
                 playerFlag.ActiveSoldier.AttackSlot(hitSlot, 1);
             }
         }
-
+        // overwatch throw
+        if (Input.GetKeyDown(KeyCode.Alpha2)) {
+            attackCommand = 4;
+            if (!clickedEnemyOnce) {
+                clickedEnemyOnce = true;
+            } else {
+                clickedEnemyOnce = false;
+                playerFlag.ActiveSoldier.ToOverwatch();
+                playerFlag.NextSoldier();
+            }
+        }
         // FIXED: it will work to click on enemy with right click and then 1.
         // makes sure you can't do mouse+something else attack
-        if (attackCommand != lastCommand && lastCommand!= 0) {
+        if (attackCommand != lastCommand && lastCommand != 0) {
             clickedEnemyOnce = false;
         }
 
         // tabbing swaps units
         if (Input.GetKeyDown(KeyCode.Tab)) {
             playerFlag.NextSoldier();
+        }
+
+        // *** ENEMIES ***
+        // if enemy moves, trigger all overwatched player's soldiers
+
+        // move all enemies
+        for (int i = 0; i < flags[1].units.Count; i++) {
+
+            // trigger player's overwatch
+            /*
+            for (int i = 0; i < playerFlag.units.Count; i++) {
+                if (playerFlag.units[i].inOverwatch) {
+                    playerFlag.units[i].AttackSlot(enemy.getSlot, 1);
+                }
+            }*/
         }
 
     }

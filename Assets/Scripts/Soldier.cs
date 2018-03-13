@@ -30,6 +30,8 @@ public class Soldier : MonoBehaviour {
     public int hp = 1;
     public float grenadeRange = 5;
 
+    public bool inOverwatch = false;
+
     private void Start() {
         RegisterSoldier();
     }
@@ -57,7 +59,7 @@ public class Soldier : MonoBehaviour {
     }
 
     internal bool AttackSlot(GridSlot hitSlot, int attackType = 0) {
-        bool attackCanHappen = 
+        bool attackCanHappen =
             // gun shot at enemy.
             (attackType == 0 && hitSlot.taken != null && hitSlot.taken.allianceId != allianceId)
             || attackType == 1;
@@ -92,6 +94,10 @@ public class Soldier : MonoBehaviour {
             if (slots[i].taken)
                 slots[i].taken.Damage(1);
         }
+    }
+
+    internal void ToOverwatch() {
+        inOverwatch = true;
     }
 }
 

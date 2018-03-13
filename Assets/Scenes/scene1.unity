@@ -501,8 +501,8 @@ Prefab:
       objectReference: {fileID: 0}
     - target: {fileID: 114273126320101120, guid: a080765564fafc4438f7452b7a045c90,
         type: 2}
-      propertyPath: hp
-      value: 2
+      propertyPath: inOverwatch
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_ParentPrefab: {fileID: 100100000, guid: a080765564fafc4438f7452b7a045c90, type: 2}
