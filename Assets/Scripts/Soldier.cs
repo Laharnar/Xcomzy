@@ -28,6 +28,7 @@ public class Soldier : MonoBehaviour {
 
     // stats
     public int hp = 1;
+    public float grenadeRange = 5;
 
     private void Start() {
         RegisterSoldier();
@@ -58,19 +59,38 @@ public class Soldier : MonoBehaviour {
     internal bool AttackSlot(GridSlot hitSlot, int attackType = 0) {
         bool attackCanHappen = 
             // gun shot at enemy.
-            (attackType == 0 && hitSlot.taken != null && hitSlot.taken.allianceId != allianceId);
+            (attackType == 0 && hitSlot.taken != null && hitSlot.taken.allianceId != allianceId)
+            || attackType == 1;
 
         if (attackCanHappen) {
-            Soldier unit = hitSlot.taken;
-            unit.Damage(1);
+            // grenade
+            if (attackType == 1) {
+                AoeDamage(grenadeRange, hitSlot);
+            } else {
+                // single shot
+                Soldier otherUnit = hitSlot.taken;
+                otherUnit.Damage(1);
+            }
         }
         return attackCanHappen;
     }
 
-    private void Damage(int v) {
+    public void Damage(int v) {
         hp -= v;
         if (hp<=0) {
             Destroy(gameObject);
+        }
+    }
+
+    public void AoeDamage(float range, GridSlot slot) {
+        // Make aoe dmg in range
+        GridSlot[] slots = GridSlot.GetSlotsInRange(slot, range);
+
+        // Note: also damages allies.
+        // Note: Doesn't work if units aren't on slot!
+        for (int i = 0; i < slots.Length; i++) {
+            if (slots[i].taken)
+                slots[i].taken.Damage(1);
         }
     }
 }

@@ -8,6 +8,7 @@ public class AllianceUnits {
     public List<Soldier> units = new List<Soldier>();
     public int activePlayerSoldier = 0;
 
+    public object ActiveSoldier { get { return units[activePlayerSoldier]; } }
 
     public void MoveActiveToRaycastedPoint(RaycastHit hit) {
         GridSlot hitSlot = hit.transform.parent.GetComponent<GridSlot>();
@@ -40,6 +41,10 @@ public class AllianceUnits {
             }
         }
         return units[best];
+    }
+
+    internal void NextSoldier() {
+        activePlayerSoldier = (activePlayerSoldier + 1) % units.Count;
     }
 }
 
@@ -82,11 +87,12 @@ public class GameplayManager : MonoBehaviour {
         int lastCommand = attackCommand;
         // *** PLAYER ***
         // Right click on any slot moves active unit there.
+        Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+        RaycastHit hit;
+        bool groundClicked = Physics.Raycast(ray, out hit, Mathf.Infinity, 1 << LayerMask.NameToLayer(GridSlot.gridLayerName), QueryTriggerInteraction.Ignore);
+
         if (Input.GetMouseButtonDown(1)) {
             attackCommand = 1;
-            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-            RaycastHit hit;
-            bool groundClicked = Physics.Raycast(ray, out hit, Mathf.Infinity, 1 << LayerMask.NameToLayer(GridSlot.gridLayerName), QueryTriggerInteraction.Ignore);
             if (groundClicked) {
                 GridSlot hitSlot = hit.transform.parent.GetComponent<GridSlot>();
                 if (hitSlot.HasEnemy()) {
@@ -97,11 +103,11 @@ public class GameplayManager : MonoBehaviour {
                         clickedEnemyOnce = false;
                         //flags[0].MoveActiveToRaycastedPoint(hit);
                         flags[0].units[flags[0].activePlayerSoldier].AttackSlot(hitSlot);
-                        flags[0].activePlayerSoldier = (flags[0].activePlayerSoldier + 1) % flags[0].units.Count;
+                        flags[0].NextSoldier();
                     }
                 } else {
                     flags[0].units[flags[0].activePlayerSoldier].MoveToSlot(hitSlot);
-                    flags[0].activePlayerSoldier = (flags[0].activePlayerSoldier + 1) % flags[0].units.Count;
+                    flags[0].NextSoldier();
                 }
             }
         }
@@ -113,10 +119,28 @@ public class GameplayManager : MonoBehaviour {
             else {
                 clickedEnemyOnce = false;
                 //flags[0].MoveActiveToRaycastedPoint(hit);
-                flags[0].units[flags[0].activePlayerSoldier].AttackSlot(nearestEnemy.curPositionSlot);
-                flags[0].activePlayerSoldier = (flags[0].activePlayerSoldier + 1) % flags[0].units.Count;
+                flags[0].ActiveSoldier.AttackSlot(nearestEnemy.curPositionSlot);
+                flags[0].NextSoldier();
             }
         }
+
+
+        // grenade throw
+        // Untested: err with clicking?
+        if (Input.GetKeyDown(KeyCode.Alpha2)) {
+            attackCommand = 3;
+            if (!clickedEnemyOnce) {
+                Debug.Log("Gren ready");
+                clickedEnemyOnce = true;
+            } else {
+                Debug.Log("Gren throw");
+                clickedEnemyOnce = false;
+                //flags[0].MoveActiveToRaycastedPoint(hit);
+                GridSlot hitSlot = hit.transform.parent.GetComponent<GridSlot>();
+                flags[0].units[flags[0].activePlayerSoldier].AttackSlot(hitSlot, 1);
+            }
+        }
+
         // FIXED: it will work to click on enemy with right click and then 1.
         // makes sure you can't do mouse+1 attack
         if (attackCommand != lastCommand && lastCommand!= 0) {
@@ -127,5 +151,6 @@ public class GameplayManager : MonoBehaviour {
         if (Input.GetKeyDown(KeyCode.Tab)) {
             flags[0].activePlayerSoldier = (flags[0].activePlayerSoldier + 1) % flags[0].units.Count;
         }
+
     }
 }

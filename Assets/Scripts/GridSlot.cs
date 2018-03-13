@@ -28,6 +28,8 @@ public class GridSlot : MonoBehaviour {
     /// </summary>
     internal Soldier taken;
 
+    public static List<GridSlot> allSlots = new List<GridSlot>();
+
     // Use this for initialization
     void Awake() {
         taken = null;
@@ -53,6 +55,8 @@ public class GridSlot : MonoBehaviour {
         }
 
         SetLayer();
+
+        allSlots.Add(this);
     }
 
     private void SetLayer() {
@@ -61,5 +65,15 @@ public class GridSlot : MonoBehaviour {
 
     internal bool HasEnemy() {
         return taken != null && taken.allianceId != 0; // 0:player
+    }
+
+    internal static GridSlot[] GetSlotsInRange(GridSlot slot, float range) {
+        List<GridSlot> slots = new List<GridSlot>();
+        for (int i = 0; i < allSlots.Count; i++) {
+            if (Vector3.Distance(allSlots [i].transform.position, slot.transform.position) <=range) {
+                slots.Add(allSlots[i]);
+            }
+        }
+        return slots.ToArray();
     }
 }
