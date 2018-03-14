@@ -73,6 +73,7 @@ public class GameplayManager : MonoBehaviour {
                 for (int i = 0; i < flags[1].units.Count; i++) {
                     if (flags[1].units[i].inOverwatch) {
                         flags[1].units[i].AttackSlot(playerFlag.ActiveSoldier.curPositionSlot);
+                        flags[1].units[i].inOverwatch = false;
                     }
                 }
 
@@ -136,6 +137,7 @@ public class GameplayManager : MonoBehaviour {
             for (int i = 0; i < playerFlag.units.Count; i++) {
                 if (playerFlag.units[i].inOverwatch) {
                     playerFlag.units[i].AttackSlot(enemy.getSlot, 1);
+                    playerFlag.units[i].inOverwatch = false;
                 }
             }*/
         }
