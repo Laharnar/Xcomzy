@@ -88,7 +88,8 @@ public class Soldier : MonoBehaviour {
             GridSlot node = hitSlot[hitSlot.Length - i - 1];
             while (Vector3.Distance(transform.position, node.transform.position) > 0.1f) {
                 Vector3 dir = node.transform.position - transform.position;
-                transform.Translate(dir.normalized * Mathf.Clamp(dir.magnitude, 0f, 1f)*Time.deltaTime*movementSpeed);
+                float slowDown = i == 0 ? Mathf.Clamp(dir.magnitude, 0f, 1f) : 1f;
+                transform.Translate(dir.normalized * slowDown*Time.deltaTime*movementSpeed);
                 yield return null;
             }
         }
