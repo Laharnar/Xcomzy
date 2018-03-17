@@ -94,7 +94,10 @@ public class GridSlot : MonoBehaviour {
             Debug.Log("FindPathAStar: start or goal is null.");
             return new GridSlot[0];
         }
-
+        if (start == goal) {
+            Debug.Log("goal is same as cur pos");
+            return new GridSlot[0];
+        }
         // The set of nodes already evaluated
         HashSet<GridSlot> closedSet = new HashSet<GridSlot>();
 
@@ -133,10 +136,10 @@ public class GridSlot : MonoBehaviour {
             // the node in openSet having the lowest fScore[] value
             GridSlot current = null;
             float minFScore = float.MaxValue;
-            for (int i = 0; i < allSlots.Count; i++) {
-                if (fScore[allSlots[i]] < minFScore) {
-                    minFScore = fScore[allSlots[i]];
-                    current = allSlots[i];
+            foreach (var slot in openSet) {
+                if (fScore[slot] < minFScore) {
+                    minFScore = fScore[slot];
+                    current = slot;
                 }
             }
             if (current == goal)
@@ -147,18 +150,19 @@ public class GridSlot : MonoBehaviour {
 
             // Assumes 1 layered grid.
             GridSlot[] curNeighbors = new GridSlot[4]{// 4 neighbouring slots.
-                allSlots[current.id+1],
-                allSlots[current.id-1],
-                allSlots[current.id-20],
-                allSlots[current.id+20],
+                GetSlotById(current.id+1),
+                GetSlotById(current.id-1),
+                GetSlotById(current.id-20),
+                GetSlotById(current.id+20),
             };
+
             foreach (var neighbor in curNeighbors) {
                 if (neighbor == null)
                     continue;
                 if (closedSet.Contains(neighbor))
                     continue;       // Ignore the neighbor which is already evaluated.
 
-                if (openSet.Contains(neighbor)) // Discover a new node
+                if (!openSet.Contains(neighbor)) // Discover a new node
                     openSet.Add(neighbor);
 
                 // The distance from start to a neighbor
@@ -176,6 +180,10 @@ public class GridSlot : MonoBehaviour {
         return new GridSlot[0];
     }
 
+    private static GridSlot GetSlotById(int v) {
+        return v > 0 ? v < allSlots.Count ? allSlots[v] : null : null;
+    }
+
     private static float HeuristicCostEstimate(GridSlot neighbor, GridSlot goal) {
         return goal.transform.position.x - neighbor.transform.position.x
              + goal.transform.position.y - neighbor.transform.position.y;
@@ -185,9 +193,10 @@ public class GridSlot : MonoBehaviour {
         int errLen = 10000;
         List<GridSlot> total_path = new List<GridSlot>();
         total_path.Add(current);
-        while (cameFrom.ContainsKey(current) && errLen > 0){
+        while (current!= null && cameFrom.ContainsKey(current) && errLen > 0){
             errLen--;
             current = cameFrom[current];
+            if (current!= null)
             total_path.Add(current);
         }
         if (errLen <= 0) {

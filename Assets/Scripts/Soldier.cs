@@ -32,8 +32,16 @@ public class Soldier : MonoBehaviour {
 
     public bool inOverwatch = false;
 
+    [Header("Cinematics")]
+    public float movementSpeed = 1;
+    bool cinematicsRunning = false;
+
     private void Start() {
         RegisterSoldier();
+    }
+
+    public void SetCurSlot(GridSlot slot) {
+        curPositionSlot = slot;
     }
 
     private void RegisterSoldier() {
@@ -45,17 +53,46 @@ public class Soldier : MonoBehaviour {
         throw new NotImplementedException();
     }*/
 
-    public bool MoveToSlot(GridSlot hitSlot) {
-        bool moveCanHappen = hitSlot.taken == false;
-        if (moveCanHappen) {
-            // change which slots are taken
-            if (curPositionSlot)
-                curPositionSlot.taken = null;
-            hitSlot.taken = this;
-            curPositionSlot = hitSlot;
+    public bool MoveToSlot(GridSlot hitSlot, bool cinematics=true) {
+        
+        if (hitSlot.taken == true)  // can't move on top of other units
+            return false;
+
+
+
+        if (cinematics) {
+            GridSlot[] path = GridSlot.FindPathAStar(curPositionSlot, hitSlot);
+            Debug.Log(path.Length);
+            if (path.Length == 0)
+                return false;
+            StartCoroutine(Cinematics_MoveOnPath(path));
+        } else
             transform.position = hitSlot.transform.position;
+        // change which slots are taken
+        if (curPositionSlot)
+            curPositionSlot.taken = null;
+        hitSlot.taken = this;
+        curPositionSlot = hitSlot;
+
+        return true;
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="path">assume it's reversed</param>
+    /// <returns></returns>
+    private IEnumerator Cinematics_MoveOnPath(GridSlot[] hitSlot) {
+        cinematicsRunning = true;
+        for (int i = 0; i < hitSlot.Length; i++) {
+            GridSlot node = hitSlot[hitSlot.Length - i - 1];
+            while (Vector3.Distance(transform.position, node.transform.position) > 0.1f) {
+                Vector3 dir = node.transform.position - transform.position;
+                transform.Translate(dir.normalized * Mathf.Clamp(dir.magnitude, 0f, 1f)*Time.deltaTime*movementSpeed);
+                yield return null;
+            }
         }
-        return moveCanHappen;
+        cinematicsRunning = false;
     }
 
     internal bool AttackSlot(GridSlot hitSlot, int attackType = 0) {
@@ -75,6 +112,12 @@ public class Soldier : MonoBehaviour {
             }
         }
         return attackCanHappen;
+    }
+
+    internal IEnumerator CinematicsDone() {
+        while (cinematicsRunning) {
+            yield return null;
+        }
     }
 
     public void Damage(int v) {

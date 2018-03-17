@@ -1,15 +1,14 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
 
-public class AllianceUnits {
+public class Team {
     public List<Soldier> units = new List<Soldier>();
     public int activePlayerSoldier = 0;
 
     public Soldier ActiveSoldier { get { return units[activePlayerSoldier]; } }
 
-    public void MoveActiveToRaycastedPoint(RaycastHit hit) {
-        GridSlot hitSlot = hit.transform.parent.GetComponent<GridSlot>();
-        bool moveOk = ActiveSoldier.MoveToSlot(hitSlot);
+    public void InitUnitPos(GridSlot hitSlot) {
+        bool moveOk = ActiveSoldier.MoveToSlot(hitSlot, false);
         if (!moveOk) {
             ActiveSoldier.AttackSlot(hitSlot);
         }
@@ -22,7 +21,9 @@ public class AllianceUnits {
             RaycastHit hit;
             bool groundClicked = Physics.Raycast(ray, out hit, Mathf.Infinity, 1 << LayerMask.NameToLayer(GridSlot.gridLayerName), QueryTriggerInteraction.Ignore);
             if (groundClicked) {
-                MoveActiveToRaycastedPoint(hit);
+                GridSlot hitSlot = hit.transform.parent.GetComponent<GridSlot>();
+                units[i].SetCurSlot(hitSlot);
+                InitUnitPos(hitSlot);
             }
         }
     }

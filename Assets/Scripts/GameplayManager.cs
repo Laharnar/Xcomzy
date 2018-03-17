@@ -10,9 +10,9 @@ using UnityEngine;
 public class GameplayManager : MonoBehaviour {
     public static GameplayManager m;
 
-    AllianceUnits[] flags = new AllianceUnits[2];
+    Team[] flags = new Team[2];
 
-    public AllianceUnits playerFlag { get { return flags[0]; } }
+    public Team playerFlag { get { return flags[0]; } }
 
     bool clickedEnemyOnce = false;
 
@@ -24,7 +24,7 @@ public class GameplayManager : MonoBehaviour {
         m = this;
 
         for (int i = 0; i < flags.Length; i++) {
-            flags[i] = new AllianceUnits();
+            flags[i] = new Team();
         }
 
         // sort all units in scene by their alliance
@@ -36,6 +36,8 @@ public class GameplayManager : MonoBehaviour {
         for (int i = 0; i < flags.Length; i++) {
             flags[i].SnapAllUnitsToGround();
         }
+
+        StartCoroutine(CinematicUpdate());
     }
 
     static GridSlot GetGridUnderMouse() {
@@ -49,98 +51,102 @@ public class GameplayManager : MonoBehaviour {
     }
 
     // Update is called once per frame
-    void Update() {
-        int lastCommand = attackCommand;
-        // *** PLAYER ***
-        // Right click on any slot moves active unit there.
-        GridSlot hitSlot = GetGridUnderMouse();
+    IEnumerator CinematicUpdate() {
+        while (true) {
+            int lastCommand = attackCommand;
+            // *** PLAYER ***
+            // Right click on any slot moves active unit there.
+            GridSlot hitSlot = GetGridUnderMouse();
 
-        if (hitSlot && Input.GetMouseButtonDown(1)) {
-            attackCommand = 1;
-            if (hitSlot.HasEnemy()) {
-                // Require 2 clicks to auto attack enemy
+            if (hitSlot && Input.GetMouseButtonDown(1)) {
+                attackCommand = 1;
+                if (hitSlot.HasEnemy()) {
+                    // Require 2 clicks to auto attack enemy
+                    if (!clickedEnemyOnce)
+                        clickedEnemyOnce = true;
+                    else {
+                        clickedEnemyOnce = false;
+                        //flags[0].MoveActiveToRaycastedPoint(hit);
+                        playerFlag.ActiveSoldier.AttackSlot(hitSlot);
+                        playerFlag.NextSoldier();
+                    }
+                } else {
+                    if (playerFlag.ActiveSoldier.MoveToSlot(hitSlot)) {
+                        // enemies in overwatch fire at player's soldier when it moves.
+                        for (int i = 0; i < flags[1].units.Count; i++) {
+                            if (flags[1].units[i].inOverwatch) {
+                                flags[1].units[i].AttackSlot(playerFlag.ActiveSoldier.curPositionSlot);
+                                flags[1].units[i].inOverwatch = false;
+                            }
+                        }
+                        yield return playerFlag.ActiveSoldier.CinematicsDone();
+
+                        playerFlag.NextSoldier();
+                    }
+                }
+            }
+
+            // fire at nearest enemy
+            if (Input.GetKeyDown(KeyCode.Alpha1)) {
+                attackCommand = 2;
+                Soldier nearestEnemy = flags[1].GetNearestTo(playerFlag.ActiveSoldier);
                 if (!clickedEnemyOnce)
                     clickedEnemyOnce = true;
                 else {
                     clickedEnemyOnce = false;
-                    //flags[0].MoveActiveToRaycastedPoint(hit);
-                    playerFlag.ActiveSoldier.AttackSlot(hitSlot);
+                    playerFlag.ActiveSoldier.AttackSlot(nearestEnemy.curPositionSlot);
                     playerFlag.NextSoldier();
                 }
-            } else {
-                playerFlag.ActiveSoldier.MoveToSlot(hitSlot);
-                // enemies in overwatch fire at player's soldier when it moves.
-                for (int i = 0; i < flags[1].units.Count; i++) {
-                    if (flags[1].units[i].inOverwatch) {
-                        flags[1].units[i].AttackSlot(playerFlag.ActiveSoldier.curPositionSlot);
-                        flags[1].units[i].inOverwatch = false;
+            }
+
+            // grenade throw
+            if (hitSlot && Input.GetKeyDown(KeyCode.Alpha3)) {
+                attackCommand = 3;
+                if (!clickedEnemyOnce) {
+                    clickedEnemyOnce = true;
+                } else {
+                    clickedEnemyOnce = false;
+                    playerFlag.ActiveSoldier.AttackSlot(hitSlot, 1);
+                }
+            }
+            // overwatch throw
+            if (Input.GetKeyDown(KeyCode.Alpha2)) {
+                attackCommand = 4;
+                if (!clickedEnemyOnce) {
+                    clickedEnemyOnce = true;
+                } else {
+                    clickedEnemyOnce = false;
+                    playerFlag.ActiveSoldier.ToOverwatch();
+                    playerFlag.NextSoldier();
+                }
+            }
+            // FIXED: it will work to click on enemy with right click and then 1.
+            // makes sure you can't do mouse+something else attack
+            if (attackCommand != lastCommand && lastCommand != 0) {
+                clickedEnemyOnce = false;
+            }
+
+            // tabbing swaps units
+            if (Input.GetKeyDown(KeyCode.Tab)) {
+                playerFlag.NextSoldier();
+            }
+
+            // *** ENEMIES ***
+            // if enemy moves, trigger all overwatched player's soldiers
+
+            // move all enemies
+            for (int i = 0; i < flags[1].units.Count; i++) {
+
+                // trigger player's overwatch
+                /*
+                for (int i = 0; i < playerFlag.units.Count; i++) {
+                    if (playerFlag.units[i].inOverwatch) {
+                        playerFlag.units[i].AttackSlot(enemy.getSlot, 1);
+                        playerFlag.units[i].inOverwatch = false;
                     }
-                }
-
-                playerFlag.NextSoldier();
+                }*/
             }
+            yield return null;
         }
-
-        // fire at nearest enemy
-        if (Input.GetKeyDown(KeyCode.Alpha1)) {
-            attackCommand = 2;
-            Soldier nearestEnemy = flags[1].GetNearestTo(playerFlag.ActiveSoldier);
-            if (!clickedEnemyOnce)
-                clickedEnemyOnce = true;
-            else {
-                clickedEnemyOnce = false;
-                playerFlag.ActiveSoldier.AttackSlot(nearestEnemy.curPositionSlot);
-                playerFlag.NextSoldier();
-            }
-        }
-
-        // grenade throw
-        if (hitSlot && Input.GetKeyDown(KeyCode.Alpha3)) {
-            attackCommand = 3;
-            if (!clickedEnemyOnce) {
-                clickedEnemyOnce = true;
-            } else {
-                clickedEnemyOnce = false;
-                playerFlag.ActiveSoldier.AttackSlot(hitSlot, 1);
-            }
-        }
-        // overwatch throw
-        if (Input.GetKeyDown(KeyCode.Alpha2)) {
-            attackCommand = 4;
-            if (!clickedEnemyOnce) {
-                clickedEnemyOnce = true;
-            } else {
-                clickedEnemyOnce = false;
-                playerFlag.ActiveSoldier.ToOverwatch();
-                playerFlag.NextSoldier();
-            }
-        }
-        // FIXED: it will work to click on enemy with right click and then 1.
-        // makes sure you can't do mouse+something else attack
-        if (attackCommand != lastCommand && lastCommand != 0) {
-            clickedEnemyOnce = false;
-        }
-
-        // tabbing swaps units
-        if (Input.GetKeyDown(KeyCode.Tab)) {
-            playerFlag.NextSoldier();
-        }
-
-        // *** ENEMIES ***
-        // if enemy moves, trigger all overwatched player's soldiers
-
-        // move all enemies
-        for (int i = 0; i < flags[1].units.Count; i++) {
-
-            // trigger player's overwatch
-            /*
-            for (int i = 0; i < playerFlag.units.Count; i++) {
-                if (playerFlag.units[i].inOverwatch) {
-                    playerFlag.units[i].AttackSlot(enemy.getSlot, 1);
-                    playerFlag.units[i].inOverwatch = false;
-                }
-            }*/
-        }
-
     }
 }

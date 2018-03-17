@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -8,5 +9,9 @@ public class PlayerCamera : MonoBehaviour {
     void LateUpdate () {
         transform.position = GameplayManager.m.playerFlag.ActiveSoldier
             .transform.position + defaultOffset;
+    }
+
+    internal static void LockOn(Soldier soldier) {
+        //throw new NotImplementedException();
     }
 }
