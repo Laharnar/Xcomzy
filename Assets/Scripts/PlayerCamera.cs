@@ -1,11 +1,10 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
 public class PlayerCamera : MonoBehaviour {
+
     public Vector3 defaultOffset;
     public float moveSpeed = 10f;
+    
     // Update is called once per frame
     void LateUpdate () {
         Vector3 cam = transform.position;

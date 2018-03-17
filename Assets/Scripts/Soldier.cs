@@ -57,12 +57,8 @@ public class Soldier : MonoBehaviour {
         
         if (hitSlot.taken == true)  // can't move on top of other units
             return false;
-
-
-
         if (cinematics) {
             GridSlot[] path = GridSlot.FindPathAStar(curPositionSlot, hitSlot);
-            Debug.Log(path.Length);
             if (path.Length == 0)
                 return false;
             StartCoroutine(Cinematics_MoveOnPath(path));
@@ -86,7 +82,8 @@ public class Soldier : MonoBehaviour {
         cinematicsRunning = true;
         for (int i = 0; i < hitSlot.Length; i++) {
             GridSlot node = hitSlot[hitSlot.Length - i - 1];
-            while (Vector3.Distance(transform.position, node.transform.position) > 0.1f) {
+            while (Vector3.Distance(transform.position, node.transform.position)
+                > Time.deltaTime * movementSpeed) {
                 Vector3 dir = node.transform.position - transform.position;
                 float slowDown = i == 0 ? Mathf.Clamp(dir.magnitude, 0f, 1f) : 1f;
                 transform.Translate(dir.normalized * slowDown*Time.deltaTime*movementSpeed);
