@@ -58,7 +58,7 @@ public class Soldier : MonoBehaviour {
         if (hitSlot.taken == true)  // can't move on top of other units
             return false;
         if (cinematics) {
-            GridSlot[] path = GridSlot.FindPathAStar(curPositionSlot, hitSlot);
+            GridSlot[] path = Pathfinding.FindPathAStar(curPositionSlot, hitSlot);
             if (path.Length == 0)
                 return false;
             StartCoroutine(Cinematics_MoveOnPath(path));
