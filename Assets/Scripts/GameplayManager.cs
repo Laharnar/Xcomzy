@@ -68,7 +68,7 @@ public class GameplayManager : MonoBehaviour {
                         clickedEnemyOnce = false;
                         //flags[0].MoveActiveToRaycastedPoint(hit);
                         playerFlag.ActiveSoldier.AttackSlot(hitSlot);
-                        playerFlag.NextSoldier();
+                        EndSoldiersTurn();
                     }
                 } else {
                     if (playerFlag.ActiveSoldier.MoveToSlot(hitSlot)) {
@@ -81,7 +81,7 @@ public class GameplayManager : MonoBehaviour {
                         }
                         yield return playerFlag.ActiveSoldier.CinematicsDone();
 
-                        playerFlag.NextSoldier();
+                        EndSoldiersTurn();
                     }
                 }
             }
@@ -95,7 +95,7 @@ public class GameplayManager : MonoBehaviour {
                 else {
                     clickedEnemyOnce = false;
                     playerFlag.ActiveSoldier.AttackSlot(nearestEnemy.curPositionSlot);
-                    playerFlag.NextSoldier();
+                    EndSoldiersTurn();
                 }
             }
 
@@ -117,7 +117,7 @@ public class GameplayManager : MonoBehaviour {
                 } else {
                     clickedEnemyOnce = false;
                     playerFlag.ActiveSoldier.ToOverwatch();
-                    playerFlag.NextSoldier();
+                    EndSoldiersTurn();
                 }
             }
             // FIXED: it will work to click on enemy with right click and then 1.
@@ -128,7 +128,7 @@ public class GameplayManager : MonoBehaviour {
 
             // tabbing swaps units
             if (Input.GetKeyDown(KeyCode.Tab)) {
-                playerFlag.NextSoldier();
+                EndSoldiersTurn();
             }
 
             // *** ENEMIES ***
@@ -148,5 +148,10 @@ public class GameplayManager : MonoBehaviour {
             }
             yield return null;
         }
+    }
+
+    void EndSoldiersTurn() {
+        playerFlag.NextSoldier();
+        PlayerCamera.ResetFocus();
     }
 }
