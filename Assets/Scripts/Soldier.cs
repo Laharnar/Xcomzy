@@ -58,7 +58,8 @@ public class Soldier : MonoBehaviour {
         if (hitSlot.taken == true)  // can't move on top of other units
             return false;
         if (cinematics) {
-            GridSlot[] path = Pathfinding.FindPathAStar(curPositionSlot, hitSlot);
+            
+            MapNode[] path = Pathfinding.FindPathAStar(curPositionSlot.transform.position, hitSlot.transform.position, MapGrid.wholeMap);
             if (path.Length == 0)
                 return false;
             StartCoroutine(Cinematics_MoveOnPath(path));
@@ -78,13 +79,13 @@ public class Soldier : MonoBehaviour {
     /// </summary>
     /// <param name="path">assume it's reversed</param>
     /// <returns></returns>
-    private IEnumerator Cinematics_MoveOnPath(GridSlot[] hitSlot) {
+    private IEnumerator Cinematics_MoveOnPath(MapNode[] hitSlot) {
         cinematicsRunning = true;
         for (int i = 0; i < hitSlot.Length; i++) {
-            GridSlot node = hitSlot[hitSlot.Length - i - 1];
-            while (Vector3.Distance(transform.position, node.transform.position)
+            MapNode node = hitSlot[hitSlot.Length - i - 1];
+            while (Vector3.Distance(transform.position, node.pos)
                 > Time.deltaTime * movementSpeed) {
-                Vector3 dir = node.transform.position - transform.position;
+                Vector3 dir = node.pos - transform.position;
                 float slowDown = i == 0 ? Mathf.Clamp(dir.magnitude, 0f, 1f) : 1f;
                 transform.Translate(dir.normalized * slowDown*Time.deltaTime*movementSpeed);
                 yield return null;
@@ -92,7 +93,7 @@ public class Soldier : MonoBehaviour {
         }
         cinematicsRunning = false;
     }
-
+    
     internal bool AttackSlot(GridSlot hitSlot, int attackType = 0) {
         bool attackCanHappen =
             // gun shot at enemy.

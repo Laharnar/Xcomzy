@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
 public static class Pathfinding {
     
@@ -8,42 +9,43 @@ public static class Pathfinding {
     /// <param name="start"></param>
     /// <param name="goal"></param>
     /// <returns></returns>
-    public static GridSlot[] FindPathAStar(GridSlot start, GridSlot goal) {
-        if (start == null || goal == null) {
+    public static MapNode[] FindPathAStar(Vector3 startPos, Vector3 goalPos, List<MapNode> allSlots) {
+        /*if (start == null || goal == null) {
             Debug.Log("FindPathAStar: start or goal is null.");
-            return new GridSlot[0];
-        }
-        if (start == goal) {
+            return new MapNode[0];
+        }*/
+        if (startPos == goalPos) {
             Debug.Log("goal is same as cur pos");
-            return new GridSlot[0];
+            return new MapNode[0];
         }
-        // The set of nodes already evaluated
-        HashSet<GridSlot> closedSet = new HashSet<GridSlot>();
+        MapNode start = MapNode.FindNode(startPos);
+        MapNode goal = MapNode.FindNode(goalPos);
 
+        // The set of nodes already evaluated
+        HashSet<MapNode> closedSet = new HashSet<MapNode>();
 
         // The set of currently discovered nodes that are not evaluated yet.
         // Initially, only the start node is known.
-        HashSet<GridSlot> openSet = new HashSet<GridSlot>();
+        HashSet<MapNode> openSet = new HashSet<MapNode>();
         openSet.Add(start);
 
         // For each node, which node it can most efficiently be reached from.
         // If a node can be reached from many nodes, cameFrom will eventually contain the
         // most efficient previous step.
-        Dictionary<GridSlot, GridSlot> cameFrom = new Dictionary<GridSlot, GridSlot>();
+        Dictionary<MapNode, MapNode> cameFrom = new Dictionary<MapNode, MapNode>();
 
         // For each node, the cost of getting from the start node to that node.
         // init as inifinity
-        Dictionary<GridSlot, float> gScore = new Dictionary<GridSlot, float>();
+        Dictionary<MapNode, float> gScore = new Dictionary<MapNode, float>();
 
         // For each node, the total cost of getting from the start node to the goal
         // by passing by that node. That value is partly known, partly heuristic.
         //map with default value of Infinity
-        Dictionary<GridSlot, float> fScore = new Dictionary<GridSlot, float>();
-        List<GridSlot> allSlots = GridSlot.allSlots;
+        Dictionary<MapNode, float> fScore = new Dictionary<MapNode, float>();
         for (int i = 0; i < allSlots.Count; i++) {
             gScore.Add(allSlots[i], float.PositiveInfinity);
             fScore.Add(allSlots[i], float.PositiveInfinity);
-            cameFrom.Add(allSlots[i], null);
+            cameFrom.Add(allSlots[i], new MapNode(Vector3.one * -1000));
         }
 
         // The cost of going from start to start is zero.
@@ -53,7 +55,7 @@ public static class Pathfinding {
         fScore[start] = HeuristicCostEstimate(start, goal);
         while (openSet.Count > 0) {
             // the node in openSet having the lowest fScore[] value
-            GridSlot current = null;
+            MapNode current = null;//Vector3.zero; // grid slot
             float minFScore = float.MaxValue;
             foreach (var slot in openSet) {
                 if (fScore[slot] < minFScore) {
@@ -68,12 +70,11 @@ public static class Pathfinding {
             closedSet.Add(current);
 
             // Assumes 1 layered grid.
-            GridSlot[] curNeighbors = new GridSlot[4]{// 4 neighbouring slots.
-                GridSlot.GetSlotById(current.id+1),
-                GridSlot.GetSlotById(current.id-1),
-                GridSlot.GetSlotById(current.id-20),
-                GridSlot.GetSlotById(current.id+20),
-            };
+            List<MapNode> curNeighbors = new List<MapNode>();
+            AddItem(current.id+1, curNeighbors, allSlots);
+            AddItem(current.id-1, curNeighbors, allSlots);
+            AddItem(current.id-20, curNeighbors, allSlots);
+            AddItem(current.id+20, curNeighbors, allSlots);
 
             foreach (var neighbor in curNeighbors) {
                 if (neighbor == null)
@@ -86,7 +87,7 @@ public static class Pathfinding {
 
                 // The distance from start to a neighbor
                 //the "dist_between" function may vary as per the solution requirements.
-                float tentative_gScore = gScore[current] + Vector3.Distance(current.transform.position, neighbor.transform.position);
+                float tentative_gScore = gScore[current] + Vector3.Distance(current.pos, neighbor.pos);
                 if (tentative_gScore >= gScore[neighbor])
                     continue;        // This is not a better path.
 
@@ -96,17 +97,25 @@ public static class Pathfinding {
                 fScore[neighbor] = gScore[neighbor] + HeuristicCostEstimate(neighbor, goal);
             }
         }
-        return new GridSlot[0];
+        return new MapNode[0];
     }
 
-    private static float HeuristicCostEstimate(GridSlot neighbor, GridSlot goal) {
-        return goal.transform.position.x - neighbor.transform.position.x
-             + goal.transform.position.y - neighbor.transform.position.y;
+    private static List<MapNode> AddItem(int v, List<MapNode> curNeighbors, List<MapNode> allNodes) {
+        if (v >= 0 && v < curNeighbors.Count) {
+            curNeighbors.Add(allNodes[v]);
+        }
+        return curNeighbors;
     }
 
-    private static GridSlot[] ReconstructPath(Dictionary<GridSlot, GridSlot> cameFrom, GridSlot current) {
+    private static float HeuristicCostEstimate(MapNode neighbor, MapNode goal) {
+        return goal.pos.x - neighbor.pos.x
+             + goal.pos.y - neighbor.pos.y;
+    }
+
+    private static MapNode[] ReconstructPath(Dictionary<MapNode, MapNode> cameFrom, MapNode currentNode) {
+        MapNode current = currentNode;
         int errLen = 10000;
-        List<GridSlot> total_path = new List<GridSlot>();
+        List<MapNode> total_path = new List<MapNode>();
         total_path.Add(current);
         while (current != null && cameFrom.ContainsKey(current) && errLen > 0) {
             errLen--;
@@ -119,5 +128,4 @@ public static class Pathfinding {
         }
         return total_path.ToArray();
     }
-
 }

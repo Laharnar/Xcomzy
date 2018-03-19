@@ -8,6 +8,42 @@ public enum SlotType {
     Impassable,
     ThinWall
 }
+
+public class MapNode {
+    public Vector3 pos;
+    public int id = -1;
+    static int idCount;
+    static List<MapNode> allNodes = new List<MapNode>();
+
+    public MapNode(Vector3 pos, bool setId = true) {
+        this.pos = pos;
+        if (setId) {
+            UpdateId();
+        }
+    }
+
+    void UpdateId() {
+        if (id == -1) {
+            id = idCount;
+            idCount++;
+            allNodes.Add(this);
+        }
+    }
+
+    /// <summary>
+    /// Assumes pos exists in allNodes
+    /// </summary>
+    /// <param name="goalPos"></param>
+    /// <returns></returns>
+    internal static MapNode FindNode(Vector3 pos) {
+        for (int i = 0; i < allNodes.Count; i++) {
+            if (pos == allNodes[i].pos) {
+                return allNodes[i];
+            }
+        }
+        return null;
+    }
+}
 /// <summary>
 /// These grid slots are shown when units want to move.
 /// Slots are applied as a layer over ground starting from some height to -10.
@@ -33,6 +69,10 @@ public class GridSlot : MonoBehaviour {
     internal Soldier taken;
 
     public static List<GridSlot> allSlots = new List<GridSlot>();
+    /// <summary>
+    /// All positions, even from deleted impassable slots.
+    /// </summary>
+    public static List<Vector3> slotPositions = new List<Vector3>();
 
     internal int id;
     static int idCount = 0;
@@ -70,6 +110,8 @@ public class GridSlot : MonoBehaviour {
             gameObject.SetActive(false);
         }
 
+        slotPositions.Add(gameObject.transform.position);
+
         if (slotType == SlotType.Impassable) {
             Destroy(gameObject);
         }
@@ -96,10 +138,6 @@ public class GridSlot : MonoBehaviour {
         }
         return slots.ToArray();
     }
-
-
-    public static GridSlot GetSlotById(int v) {
-        return v > 0 ? v < allSlots.Count ? allSlots[v] : null : null;
-    }
+    
 
 }
