@@ -7,6 +7,7 @@ public class PlayerCamera : MonoBehaviour {
     public Vector3 defaultOffset;
     public float moveSpeed = 10f;
     Vector3 offset;
+    Vector3 offsetDir;
 
     private void Start() {
         cam = this;
@@ -14,29 +15,34 @@ public class PlayerCamera : MonoBehaviour {
 
     // Update is called once per frame
     void LateUpdate () {
-        Vector3 cam = transform.position;
+        
         Vector3 dir = (GameplayManager.m.playerFlag.ActiveSoldier
-            .transform.position+defaultOffset) - cam 
-            + transform.TransformDirection(offset);
-
-        transform.Translate(dir.normalized*Mathf.Clamp(dir.magnitude, 0f, 1f) *Time.deltaTime*moveSpeed);
+            .transform.position+ defaultOffset)
+            + offsetDir * moveSpeed;
+        
+        transform.position = dir;
     }
 
     private void Update() {
         Vector2 v = Input.mousePosition;
         float max = 40;
+        Vector3 off = offset;
         if (v.x < max) {
-            offset.x -= 1-(v.x/max);
+            off.x -= (1 - (v.x/max));
         }
         if (v.x > Screen.width - max) {
-            offset.x += 1 - (v.x / max);
+            off.x += (1 - ((Screen.width-v.x) / max));
         }
         if (v.y < max) {
-            offset.z -= 1 - (v.y / max);
+            off.z -= (1 - (v.y / max));
         }
         if (v.y > Screen.height - max) {
-            offset.z += 1 - (v.y / max);
+            off.z += (1 - ((Screen.height-v.y) / max));
         }
+        offset = off;
+        // point offset in cam's direction
+        offsetDir = Quaternion.AngleAxis(transform.eulerAngles.y, Vector3.up) * offset;
+
     }
 
     public static void ResetFocus() {

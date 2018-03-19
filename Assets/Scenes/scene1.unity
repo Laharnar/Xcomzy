@@ -293,7 +293,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   defaultOffset: {x: -8, y: 8, z: -8}
-  moveSpeed: 12
+  moveSpeed: 0.8
 --- !u!1001 &475445257
 Prefab:
   m_ObjectHideFlags: 0
