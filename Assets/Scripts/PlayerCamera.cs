@@ -27,6 +27,9 @@ public class PlayerCamera : MonoBehaviour {
         Vector2 v = Input.mousePosition;
         float max = 40;
         Vector3 off = offset;
+        // prevents inf speed when mouse goes off screen
+        v.x = Mathf.Clamp(v.x, 0, Screen.width);
+        v.y = Mathf.Clamp(v.y, 0, Screen.height);
         if (v.x < max) {
             off.x -= (1 - (v.x/max));
         }

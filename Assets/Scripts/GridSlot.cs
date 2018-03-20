@@ -22,6 +22,12 @@ public class MapNode {
         }
     }
 
+    public override bool Equals(object obj) {
+        if (obj.GetType() != typeof(MapNode))
+            Debug.Log("Type mismatch, expecting MapNode");
+        return ((MapNode)obj).id == id;
+    }
+
     void UpdateId() {
         if (id == -1) {
             id = idCount;
@@ -41,6 +47,18 @@ public class MapNode {
                 return allNodes[i];
             }
         }
+        Debug.Log("No match found");
+        return null;
+    }
+
+
+    internal static MapNode FindNode(int id) {
+        for (int i = 0; i < allNodes.Count; i++) {
+            if (id == allNodes[i].id) {
+                return allNodes[i];
+            }
+        }
+        Debug.Log("No match found for id "+id);
         return null;
     }
 }
