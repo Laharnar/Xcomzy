@@ -68,21 +68,21 @@ public static class Pathfinding {
                     current = nodes[slot];
                 }
             }
-            if (current.Equals(nodes[goal]))
-                return ReconstructPath(cameFrom, current);
+            if (current.id == goal)
+                return ReconstructPath(cameFrom, current, nodes);
 
             openSet.Remove(current.id);
             closedSet.Add(current .id);
 
             // Assumes 1 layered grid.
             List<MapNode> curNeighbors = new List<MapNode>();
-            AddItem(current.id+1, ref curNeighbors, allSlots);
-            AddItem(current.id-1, ref curNeighbors, allSlots);
-            AddItem(current.id-20,ref  curNeighbors, allSlots);
-            AddItem(current.id+20,ref  curNeighbors, allSlots);
+            AddItem(current.id+1* MapGrid.pointsPerNode, ref curNeighbors, allSlots);
+            AddItem(current.id-1 * MapGrid.pointsPerNode, ref curNeighbors, allSlots);
+            AddItem(current.id- GridGenerator.gen.w * MapGrid.pointsPerNode, ref  curNeighbors, allSlots);
+            AddItem(current.id+ GridGenerator.gen.w * MapGrid.pointsPerNode, ref  curNeighbors, allSlots);
 
             foreach (var neighbor in curNeighbors) {
-                if (neighbor == null)
+                if (neighbor == null || neighbor.id == -1)
                     continue;
                 if (closedSet.Contains(neighbor.id))
                     continue;       // Ignore the neighbor which is already evaluated.
@@ -116,20 +116,19 @@ public static class Pathfinding {
              + goal.pos.y - neighbor.pos.y;
     }
 
-    private static MapNode[] ReconstructPath(Dictionary<int, int> cameFrom, MapNode currentNode) {
-        Debug.Log("reconstrctin"+currentNode.id+""+cameFrom[currentNode.id]);
-        MapNode current = currentNode;
+    private static MapNode[] ReconstructPath(Dictionary<int, int> cameFrom, MapNode currentNode, Dictionary<int, MapNode> nodes) {
+        int current = currentNode.id;
         int errLen = 10000;
         List<MapNode> total_path = new List<MapNode>();
-        total_path.Add(current);
-        while (current != null && current.id != -1 && cameFrom.ContainsKey(current.id) && errLen > 0) {
+        total_path.Add(nodes[current]);
+        while (current != -1 && cameFrom.ContainsKey(current) && errLen > 0) {
             errLen--;
-            current = MapNode.FindNode(cameFrom[current.id]);
-            if (current!= null && current.id != -1)
-                total_path.Add(current);
+            current = cameFrom[current];
+            if (current != -1)
+                total_path.Add(nodes[current]);
         }
         if (errLen <= 0) {
-            Debug.Log("Error infi loop, cyclic path");
+            Debug.Log("Error infi loop 10k+, cyclic path");
         }
         return total_path.ToArray();
     }

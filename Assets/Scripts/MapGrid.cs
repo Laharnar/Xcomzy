@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class MapGrid:MonoBehaviour {
+    public const int pointsPerNode = 4;
+
     public Vector3 pointScale;
     public static List<MapNode> wholeMap {
         get {

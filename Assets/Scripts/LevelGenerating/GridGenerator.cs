@@ -4,6 +4,8 @@
 /// </summary>
 public class GridGenerator:MonoBehaviour {
 
+    public static GridGenerator gen;
+
     public Transform gridItem;
 
     public int w = 20;
@@ -12,6 +14,7 @@ public class GridGenerator:MonoBehaviour {
     public Vector2 scale = new Vector2(1,1);
 
     private void Awake() {
+        gen = this;
         MakeGrid(w, l, transform.position.z);
     }
 
