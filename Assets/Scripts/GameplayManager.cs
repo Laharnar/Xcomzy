@@ -73,12 +73,8 @@ public class GameplayManager : MonoBehaviour {
                 } else {
                     if (playerFlag.ActiveSoldier.MoveToSlot(hitSlot)) {
                         // enemies in overwatch fire at player's soldier when it moves.
-                        for (int i = 0; i < flags[1].units.Count; i++) {
-                            if (flags[1].units[i].inOverwatch) {
-                                flags[1].units[i].AttackSlot(playerFlag.ActiveSoldier.curPositionSlot);
-                                flags[1].units[i].inOverwatch = false;
-                            }
-                        }
+                        HandleOverwatchWithoutFog(playerFlag.ActiveSoldier, flags[1]);
+                        
                         yield return playerFlag.ActiveSoldier.CinematicsDone();
 
                         EndSoldiersTurn();
@@ -134,19 +130,22 @@ public class GameplayManager : MonoBehaviour {
             // *** ENEMIES ***
             // if enemy moves, trigger all overwatched player's soldiers
 
-            // move all enemies
+            // AI: move all enemies
             for (int i = 0; i < flags[1].units.Count; i++) {
-
                 // trigger player's overwatch
-                /*
-                for (int i = 0; i < playerFlag.units.Count; i++) {
-                    if (playerFlag.units[i].inOverwatch) {
-                        playerFlag.units[i].AttackSlot(enemy.getSlot, 1);
-                        playerFlag.units[i].inOverwatch = false;
-                    }
-                }*/
+                HandleOverwatchWithoutFog(flags[1].units[i], playerFlag);
             }
             yield return null;
+        }
+    }
+
+    private void HandleOverwatchWithoutFog(Soldier activeSoldier, Team otherTeam) {
+        for (int i = 0; i < otherTeam.units.Count; i++) {
+            if (otherTeam.units[i].inOverwatch) {
+                otherTeam.units[i].AttackSlot(activeSoldier.curPositionSlot);
+                otherTeam.units[i].inOverwatch = false;
+                otherTeam.units[i].StartCoroutine(otherTeam.units[i].Cinematics_Shoot(activeSoldier.curPositionSlot));
+            }
         }
     }
 

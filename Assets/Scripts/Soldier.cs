@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -35,9 +34,15 @@ public class Soldier : MonoBehaviour {
     [Header("Cinematics")]
     public float movementSpeed = 1;
     bool cinematicsRunning = false;
+    
+    SoldierAnimatorController animations;
 
     private void Start() {
         RegisterSoldier();
+        animations = GetComponent<SoldierAnimatorController>();
+        if (animations == null) {
+            Debug.LogWarning("Missing SoldierAnimatorController component on "+name+". Could be intentional.", transform);
+        }
     }
 
     public void SetCurSlot(GridSlot slot) {
@@ -71,6 +76,7 @@ public class Soldier : MonoBehaviour {
         hitSlot.taken = this;
         curPositionSlot = hitSlot;
 
+
         return true;
     }
 
@@ -80,20 +86,54 @@ public class Soldier : MonoBehaviour {
     /// <param name="path">assume it's reversed</param>
     /// <returns></returns>
     private IEnumerator Cinematics_MoveOnPath(MapNode[] hitSlot) {
-        cinematicsRunning = true;
+        int movementMode = 1;
+        // Note: maybe need different animations when going over wall.(node has different height)
+        if (animations)
+            animations.RunAnimation("Run");
+
+        //cinematicsRunning = true;
         for (int i = 0; i < hitSlot.Length; i++) {
             MapNode node = hitSlot[hitSlot.Length - i - 1];
-            while (Vector3.Distance(transform.position, node.pos)
-                > Time.deltaTime * movementSpeed) {
-                Vector3 dir = node.pos - transform.position;
-                float slowDown = i == 0 ? Mathf.Clamp(dir.magnitude, 0f, 1f) : 1f;
-                transform.Translate(dir.normalized * slowDown*Time.deltaTime*movementSpeed);
+            while (Vector3.Distance(transform.position, node.pos) > Time.deltaTime * movementSpeed) {
+                if (movementMode == 0) { // moves towards point
+                    Vector3 dir = node.pos - transform.position;
+                    float slowDown = i == 0 ? Mathf.Clamp(dir.magnitude, 0f, 1f) : 1f;
+                    transform.Translate(dir.normalized * slowDown * Time.deltaTime * movementSpeed);
+                }else 
+                if (movementMode == 1) { // moves and rotates towards point
+                    Vector3 dir = node.pos - transform.position;
+                    float slowDown = i == 0 ? Mathf.Clamp(dir.magnitude, 0f, 1f) : 1f;
+                    transform.forward = dir.normalized;
+                    transform.Translate(Vector3.forward * slowDown * Time.deltaTime * movementSpeed);
+                }
                 yield return null;
             }
         }
-        cinematicsRunning = false;
+        //cinematicsRunning = false;
+
+        if (animations)
+            animations.StopAnimation("Run");
     }
-    
+
+
+    internal IEnumerator Cinematics_Shoot(GridSlot slot) {
+        cinematicsRunning = true;
+        yield return StartCoroutine(Cinematics_StandAndTurn(slot));
+        if (animations)
+            animations.TriggerAnimation("Shoot");
+        cinematicsRunning = false;
+        // Will automatically return to correct state, courch or stand
+    }
+
+    private IEnumerator Cinematics_StandAndTurn(GridSlot hitSlot) {
+        // Note: if crouching, stand animation
+        // Note: then turn to target first.
+        // Note(2): add slow turn or smth
+        transform.forward = (hitSlot.transform.position - transform.position).normalized;
+        yield return new WaitForSeconds(0.5f);
+        
+    }
+
     internal bool AttackSlot(GridSlot hitSlot, int attackType = 0) {
         bool attackCanHappen =
             // gun shot at enemy.
@@ -104,15 +144,31 @@ public class Soldier : MonoBehaviour {
             // grenade
             if (attackType == 1) {
                 AoeDamage(grenadeRange, hitSlot);
+                StartCoroutine(Cinematics_Throw("Grenade type 1", hitSlot));
             } else {
                 // single shot
                 Soldier otherUnit = hitSlot.taken;
                 otherUnit.Damage(1);
+                StartCoroutine(Cinematics_Shoot(hitSlot));
             }
         }
         return attackCanHappen;
     }
 
+    private IEnumerator Cinematics_Throw(string projectile, GridSlot hitSlot) {
+        cinematicsRunning = false;
+        yield return StartCoroutine(Cinematics_StandAndTurn(hitSlot));
+        if (animations)
+            animations.TriggerAnimation("Throw");
+        // Will automatically return to correct state, courch or stand
+        cinematicsRunning = false;
+    }
+
+    /// <summary>
+    /// Use in cinematics update, to make sure all soldiers run their animations.
+    /// Note: currently overwatch shoot animations come AFTER move animations.
+    /// </summary>
+    /// <returns></returns>
     internal IEnumerator CinematicsDone() {
         while (cinematicsRunning) {
             yield return null;

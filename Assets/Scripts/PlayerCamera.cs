@@ -7,20 +7,20 @@ public class PlayerCamera : MonoBehaviour {
     public Vector3 defaultOffset;
     public float moveSpeed = 10f;
     Vector3 offset;
-    Vector3 offsetDir;
+    Vector3 panOffset;
 
-    private void Start() {
+    private void Awake() {
         cam = this;
     }
 
     // Update is called once per frame
     void LateUpdate () {
         
-        Vector3 dir = (GameplayManager.m.playerFlag.ActiveSoldier
+        Vector3 wantedPos = (GameplayManager.m.playerFlag.ActiveSoldier
             .transform.position+ defaultOffset)
-            + offsetDir * moveSpeed;
-        
-        transform.position = dir;
+            + panOffset * moveSpeed;// pos behind the active unit+panning offset
+        Vector3 dir = wantedPos - transform.position;
+        transform.Translate(dir*Mathf.Clamp(dir.magnitude, 0f, 1f)*Time.deltaTime*10f, Space.World);
     }
 
     private void Update() {
@@ -44,12 +44,13 @@ public class PlayerCamera : MonoBehaviour {
         }
         offset = off;
         // point offset in cam's direction
-        offsetDir = Quaternion.AngleAxis(transform.eulerAngles.y, Vector3.up) * offset;
+        panOffset = Quaternion.AngleAxis(transform.eulerAngles.y, Vector3.up) * offset;
 
     }
 
     public static void ResetFocus() {
-        cam.offset = Vector3.zero;
+        if (cam != null)
+            cam.offset = Vector3.zero;
     }
 
     internal static void LockOn(Soldier soldier) {
