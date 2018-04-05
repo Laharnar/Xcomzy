@@ -13,8 +13,12 @@ public class MapGrid:MonoBehaviour {
             } return _wholeMap; } private set { _wholeMap = value; } }
     static List<MapNode> _wholeMap;
 
+    public static void InitSingleton() {
+        GameObject.FindObjectOfType<MapGrid>().Init();
+    }
+
     //public GridGenerator wh;
-    private void Start() {
+    void Init() {//Start
         wholeMap = new List<MapNode>();
         // detect map
         for (int i = 0; i < GridSlot.slotPositions.Count; i++) {
@@ -32,6 +36,11 @@ public class MapGrid:MonoBehaviour {
         float h3 = GetPointByRaycast(point + Vector3.forward * 0.01f + Vector3.right * 0.01f, height).y;
         float h4 = GetPointByRaycast(point + Vector3.back * 0.01f + Vector3.right * 0.01f, height).y;
         return new Vector3(point.x,Mathf.Max(h1, h2, h3, h4),  point.z);
+    }
+
+    static bool IsBelowRange(int id, float range) {
+        // Checks if point is in low cover range
+        return wholeMap[id].pos.y < range;
     }
 
     private void OnDrawGizmos() {
@@ -56,4 +65,31 @@ public class MapGrid:MonoBehaviour {
         return new Vector3(vec.x, minHeight, vec.z);
     }
 
+    internal static bool MaxLowCover(GridSlot curPositionSlot) {
+        int id = curPositionSlot.id * 4;
+        /* neighbours mid-path cover: 
+        right:id; i+1, forw:i+2, 
+        left:id-1;i+1
+        back:id+width;i+2
+        */
+        int[] neighbourIds = new int[4] {
+            id+1,
+            id+2,
+            id-3,//-4+1,
+            id+GridGenerator.gen.w*4+2
+        };
+        bool gotLowCover = AllBelowRange(neighbourIds, 3);
+        return gotLowCover;
+    }
+
+    private static bool AllBelowRange(int[] neighbourIds, float range) {
+        for (int i = 0; i < neighbourIds.Length; i++) {
+            if (neighbourIds[i] > -1 && neighbourIds[i] < wholeMap.Count) {
+                if (!IsBelowRange(neighbourIds[i], range)) { // low cover or ground
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
 }

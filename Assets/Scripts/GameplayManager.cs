@@ -76,6 +76,7 @@ public class GameplayManager : MonoBehaviour {
                         HandleOverwatchWithoutFog(playerFlag.ActiveSoldier, flags[1]);
                         
                         yield return playerFlag.ActiveSoldier.CinematicsDone();
+                        playerFlag.ActiveSoldier.HandleCover();
 
                         EndSoldiersTurn();
                     }

@@ -83,6 +83,7 @@ public class GridSlot : MonoBehaviour {
         SetLayer();
 
         allSlots.Add(this);
+
     }
 
     private void SetLayer() {

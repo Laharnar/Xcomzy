@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -75,9 +76,18 @@ public class Soldier : MonoBehaviour {
             curPositionSlot.taken = null;
         hitSlot.taken = this;
         curPositionSlot = hitSlot;
-
-
+        
         return true;
+    }
+
+    internal void HandleCover() {
+        if (animations) {
+            if (MapGrid.MaxLowCover(curPositionSlot)) {
+                animations.RunAnimation("Crouch");
+            } else {
+                animations.StopAnimation("Crouch");
+            }
+        }
     }
 
     /// <summary>
@@ -111,11 +121,10 @@ public class Soldier : MonoBehaviour {
         }
         //cinematicsRunning = false;
 
-        if (animations)
+        if (animations) {
             animations.StopAnimation("Run");
+        }
     }
-
-
     internal IEnumerator Cinematics_Shoot(GridSlot slot) {
         cinematicsRunning = true;
         yield return StartCoroutine(Cinematics_StandAndTurn(slot));

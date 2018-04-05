@@ -16,6 +16,12 @@ public class GridGenerator:MonoBehaviour {
     private void Awake() {
         gen = this;
         MakeGrid(w, l, transform.position.z);
+
+    }
+
+    private void Start() {
+        MapGrid.InitSingleton();
+
     }
 
     private void MakeGrid(int w, int l, float hpos) {
