@@ -12,6 +12,7 @@ public class MapGrid:MonoBehaviour {
                 Debug.Log("Maybe MapGrid object isn't in scene.");
             } return _wholeMap; } private set { _wholeMap = value; } }
     static List<MapNode> _wholeMap;
+    static List<bool> mask;
 
     public static void InitSingleton() {
         GameObject.FindObjectOfType<MapGrid>().Init();
@@ -22,11 +23,22 @@ public class MapGrid:MonoBehaviour {
         wholeMap = new List<MapNode>();
         // detect map
         for (int i = 0; i < GridSlot.slotPositions.Count; i++) {
-            wholeMap.Add(new MapNode(GridSlot.slotPositions[i]));
+            Vector3 p = MaxOfXRaycast(GridSlot.slotPositions[i], 10);
+            Vector3 p1 = MaxOfXRaycast(GridSlot.slotPositions[i] + Vector3.right * pointScale.x, 10);
+            Vector3 p2 = MaxOfXRaycast(GridSlot.slotPositions[i] + Vector3.forward * pointScale.z, 10);
+            Vector3 p3 = MaxOfXRaycast(GridSlot.slotPositions[i] + Vector3.forward * pointScale.z + Vector3.right * pointScale.x, 10);
+            // all slots are walkable if it's ground.
+            wholeMap.Add(new MapNode(p, false));
+            wholeMap.Add(new MapNode(p1, false));
+            wholeMap.Add(new MapNode(p2, false));
+            wholeMap.Add(new MapNode(p3, false));
+        }
 
-            wholeMap.Add(new MapNode(MaxOfXRaycast(GridSlot.slotPositions[i] + Vector3.right * pointScale.x, 10)));
-            wholeMap.Add(new MapNode(MaxOfXRaycast(GridSlot.slotPositions[i] + Vector3.forward * pointScale.z, 10)));
-            wholeMap.Add(new MapNode(MaxOfXRaycast(GridSlot.slotPositions[i] + Vector3.forward * pointScale.z + Vector3.right * pointScale.x, 10)));
+        for (int i = 0; i < wholeMap.Count; i+=4) {
+            wholeMap[i].walkable = wholeMap[i].pos.y < 0.5f;
+            wholeMap[i + 1].walkable = wholeMap[i + 1].pos.y < 3 && wholeMap[i].walkable;
+            wholeMap[i + 2].walkable = wholeMap[i + 2].pos.y < 3 && wholeMap[i].walkable;
+            wholeMap[i + 3].walkable = wholeMap[i + 3].pos.y < 0.5f;
         }
     }
 
@@ -44,8 +56,12 @@ public class MapGrid:MonoBehaviour {
     }
 
     private void OnDrawGizmos() {
-            Gizmos.color = Color.red;
         for (int i = 0; i < wholeMap.Count; i++) {
+            if (wholeMap[i].walkable) {
+                Gizmos.color = Color.green;
+            } else {
+                Gizmos.color = Color.red;
+            }
             Gizmos.DrawLine(wholeMap[i].pos, wholeMap[i].pos + Vector3.up);
         }
     }

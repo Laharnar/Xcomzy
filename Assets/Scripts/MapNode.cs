@@ -5,8 +5,9 @@ public class MapNode {
     public int id = -1;
     static int idCount;
     static List<MapNode> allNodes = new List<MapNode>();
+    public bool walkable = true;
 
-    public MapNode(Vector3 pos, bool setId = true) {
+    public MapNode(Vector3 pos, bool walkable, bool setId = true) {
         this.pos = pos;
         if (setId) {
             UpdateId();

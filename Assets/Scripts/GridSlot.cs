@@ -51,7 +51,7 @@ public class GridSlot : MonoBehaviour {
         taken = null;
 
         Vector3 vec = new Vector3(transform.position.x, raycastFromHeight, transform.position.z);
-        Vector3 minPoint = new Vector3(transform.position.x, minHeight, transform.position.z);
+        Vector3 minDepth = new Vector3(transform.position.x, minHeight, transform.position.z);
         transform.position = vec;
         // Raycasts down to ground and puts this object on casted position.
         RaycastHit hit;
@@ -66,11 +66,11 @@ public class GridSlot : MonoBehaviour {
         slotType = SlotType.Impassable;
         if (cast) {
             transform.position = hit.point;
-            if (transform.position.y <= 1f && transform.position.y > 0f) {
+            if (transform.position.y <= 1 && transform.position.y >= 0f) {
                 slotType = SlotType.Walkable;
             }
-        } else {
-            transform.position = minPoint;
+        } else { // snap grid slot off map
+            transform.position = minDepth;
             gameObject.SetActive(false);
         }
 
