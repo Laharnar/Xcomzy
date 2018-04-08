@@ -23,31 +23,47 @@ public class MapGrid:MonoBehaviour {
         wholeMap = new List<MapNode>();
         // detect map
         for (int i = 0; i < GridSlot.slotPositions.Count; i++) {
-            Vector3 p = MaxOfXRaycast(GridSlot.slotPositions[i], 10);
+            Vector3 p0 = MaxOfXRaycast(GridSlot.slotPositions[i], 10);
             Vector3 p1 = MaxOfXRaycast(GridSlot.slotPositions[i] + Vector3.right * pointScale.x, 10);
             Vector3 p2 = MaxOfXRaycast(GridSlot.slotPositions[i] + Vector3.forward * pointScale.z, 10);
             Vector3 p3 = MaxOfXRaycast(GridSlot.slotPositions[i] + Vector3.forward * pointScale.z + Vector3.right * pointScale.x, 10);
+            SlotType t0 = MaxTypeOfXRaycast(GridSlot.slotPositions[i], 10);
+            SlotType t1 = MaxTypeOfXRaycast(GridSlot.slotPositions[i] + Vector3.right * pointScale.x, 10);
+            SlotType t2 = MaxTypeOfXRaycast(GridSlot.slotPositions[i] + Vector3.forward * pointScale.z, 10);
+            SlotType t3 = MaxTypeOfXRaycast(GridSlot.slotPositions[i] + Vector3.forward * pointScale.z + Vector3.right * pointScale.x, 10);
             // all slots are walkable if it's ground.
-            wholeMap.Add(new MapNode(p, false));
-            wholeMap.Add(new MapNode(p1, false));
-            wholeMap.Add(new MapNode(p2, false));
-            wholeMap.Add(new MapNode(p3, false));
+            wholeMap.Add(new MapNode(p0,t0));
+            wholeMap.Add(new MapNode(p1,t1));
+            wholeMap.Add(new MapNode(p2,t2));
+            wholeMap.Add(new MapNode(p3,t3));
         }
 
-        for (int i = 0; i < wholeMap.Count; i+=4) {
-            wholeMap[i].walkable = wholeMap[i].pos.y < 0.5f;
-            wholeMap[i + 1].walkable = wholeMap[i + 1].pos.y < 3 && wholeMap[i].walkable;
-            wholeMap[i + 2].walkable = wholeMap[i + 2].pos.y < 3 && wholeMap[i].walkable;
-            wholeMap[i + 3].walkable = wholeMap[i + 3].pos.y < 0.5f;
-        }
     }
 
     Vector3 MaxOfXRaycast(Vector3 point, float height) {
-        float h1 = GetPointByRaycast(point + Vector3.forward * 0.01f + Vector3.left * 0.01f, height).y;
-        float h2 = GetPointByRaycast(point + Vector3.back * 0.01f + Vector3.left * 0.01f, height).y;
-        float h3 = GetPointByRaycast(point + Vector3.forward * 0.01f + Vector3.right * 0.01f, height).y;
-        float h4 = GetPointByRaycast(point + Vector3.back * 0.01f + Vector3.right * 0.01f, height).y;
+        float h1 = GetByRaycast(point + Vector3.forward * 0.01f + Vector3.left * 0.01f, height).point.y;
+        float h2 = GetByRaycast(point + Vector3.back * 0.01f + Vector3.left * 0.01f, height).point.y;
+        float h3 = GetByRaycast(point + Vector3.forward * 0.01f + Vector3.right * 0.01f, height).point.y;
+        float h4 = GetByRaycast(point + Vector3.back * 0.01f + Vector3.right * 0.01f, height).point.y;
         return new Vector3(point.x,Mathf.Max(h1, h2, h3, h4),  point.z);
+    }
+
+    SlotType MaxTypeOfXRaycast(Vector3 point, float height) {
+        RaycastHit h1 = GetByRaycast(point + Vector3.forward * 0.01f + Vector3.left * 0.01f, height);
+        RaycastHit h2 = GetByRaycast(point + Vector3.back * 0.01f + Vector3.left * 0.01f, height);
+        RaycastHit h3 = GetByRaycast(point + Vector3.forward * 0.01f + Vector3.right * 0.01f, height);
+        RaycastHit h4 = GetByRaycast(point + Vector3.back * 0.01f + Vector3.right * 0.01f, height);
+        SlotType max = SlotType.Walkable;
+        Debug.Log(h1.transform);
+        if (h1.transform != null) 
+            max = (SlotType)Mathf.Max((int)max, (int)h1.transform.GetComponent<LevelItemType>().itemPassabilityType);
+        if (h2.transform != null)
+            max = (SlotType)Mathf.Max((int)max, (int)h2.transform.GetComponent<LevelItemType>().itemPassabilityType);
+        if (h3.transform != null)
+            max = (SlotType)Mathf.Max((int)max, (int)h3.transform.GetComponent<LevelItemType>().itemPassabilityType);
+        if (h4.transform != null)
+            max = (SlotType)Mathf.Max((int)max, (int)h4.transform.GetComponent<LevelItemType>().itemPassabilityType);
+        return max;
     }
 
     static bool IsBelowRange(int id, float range) {
@@ -57,15 +73,17 @@ public class MapGrid:MonoBehaviour {
 
     private void OnDrawGizmos() {
         for (int i = 0; i < wholeMap.Count; i++) {
-            if (wholeMap[i].walkable) {
+            Gizmos.color = Color.red;
+            if (wholeMap[i].nodeType == SlotType.Walkable) {
                 Gizmos.color = Color.green;
-            } else {
-                Gizmos.color = Color.red;
+            }
+            if (wholeMap[i].nodeType == SlotType.ThinWall) {
+                Gizmos.color = Color.yellow;
             }
             Gizmos.DrawLine(wholeMap[i].pos, wholeMap[i].pos + Vector3.up);
         }
     }
-    Vector3 GetPointByRaycast(Vector3 vec, float raycastFromHeight, float minHeight = -10) {
+    public static RaycastHit GetByRaycast(Vector3 vec, float raycastFromHeight, float minHeight = -10) {
         RaycastHit hit;
         Ray ray = new Ray(new Vector3(vec.x, vec.y+raycastFromHeight, vec.z),
             Vector3.down);
@@ -76,12 +94,22 @@ public class MapGrid:MonoBehaviour {
             QueryTriggerInteraction.Ignore
             );
         if (cast) {
-            return hit.point;
+            //return hit.point;
         }
-        return new Vector3(vec.x, minHeight, vec.z);
+        return hit;
+        //return new Vector3(vec.x, minHeight, vec.z);
     }
 
-    internal static bool MaxLowCover(GridSlot curPositionSlot) {
+    /// <summary>
+    /// Detect if slot has only low cover. Useful for determining soldiers animations.
+    /// </summary>
+    /// <param name="curPositionSlot"></param>
+    /// <returns></returns>
+    internal static bool OnlyLowCover(GridSlot curPositionSlot) {
+        return AllUnderRange(curPositionSlot, 3);
+    }
+
+    private static bool AllUnderRange(GridSlot curPositionSlot, float range) {
         int id = curPositionSlot.id * 4;
         /* neighbours mid-path cover: 
         right:id; i+1, forw:i+2, 
@@ -94,7 +122,7 @@ public class MapGrid:MonoBehaviour {
             id-3,//-4+1,
             id+GridGenerator.gen.w*4+2
         };
-        bool gotLowCover = AllBelowRange(neighbourIds, 3);
+        bool gotLowCover = AllBelowRange(neighbourIds, range);
         return gotLowCover;
     }
 

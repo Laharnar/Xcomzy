@@ -82,7 +82,7 @@ public class Soldier : MonoBehaviour {
 
     internal void HandleCover() {
         if (animations) {
-            if (MapGrid.MaxLowCover(curPositionSlot)) {
+            if (MapGrid.OnlyLowCover(curPositionSlot)) {
                 animations.RunAnimation("Crouch");
             } else {
                 animations.StopAnimation("Crouch");

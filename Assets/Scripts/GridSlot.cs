@@ -5,8 +5,8 @@ using UnityEngine;
 
 public enum SlotType {
     Walkable,
+    ThinWall,
     Impassable,
-    ThinWall
 }
 /// <summary>
 /// These grid slots are shown when units want to move.
@@ -65,10 +65,13 @@ public class GridSlot : MonoBehaviour {
             );
         slotType = SlotType.Impassable;
         if (cast) {
-            transform.position = hit.point;
-            if (transform.position.y <= 1 && transform.position.y >= 0f) {
+            Vector3 point = MapGrid.GetByRaycast(transform.position, 10).point;
+            if (point.y < 0.5f && point.y >= 0f) {
                 slotType = SlotType.Walkable;
+            } else if (point.y >0.5f) {
+                slotType = SlotType.Impassable;
             }
+            transform.position = hit.point;
         } else { // snap grid slot off map
             transform.position = minDepth;
             gameObject.SetActive(false);

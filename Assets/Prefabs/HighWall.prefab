@@ -37,6 +37,7 @@ GameObject:
   - component: {fileID: 33746956824848480}
   - component: {fileID: 23766288225089102}
   - component: {fileID: 65188963332669082}
+  - component: {fileID: 114633143135942844}
   m_Layer: 8
   m_Name: beveledHighWall 1
   m_TagString: Untagged
@@ -122,3 +123,15 @@ BoxCollider:
   serializedVersion: 2
   m_Size: {x: 1.9809566, y: 1.9809566, z: 3.9999995}
   m_Center: {x: 0.000000029802322, y: 0.00000026822087, z: 1.9999998}
+--- !u!114 &114633143135942844
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1614725986602906}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e278fb3e6087b1845b2e2eaa3c0472c1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  itemPassabilityType: 2

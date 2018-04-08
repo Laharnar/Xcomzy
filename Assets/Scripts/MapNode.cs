@@ -5,10 +5,11 @@ public class MapNode {
     public int id = -1;
     static int idCount;
     static List<MapNode> allNodes = new List<MapNode>();
-    public bool walkable = true;
+    internal SlotType nodeType;
 
-    public MapNode(Vector3 pos, bool walkable, bool setId = true) {
+    public MapNode(Vector3 pos, SlotType nodeType, bool setId = true) {
         this.pos = pos;
+        this.nodeType = nodeType;
         if (setId) {
             UpdateId();
         }
