@@ -38,6 +38,10 @@ public class Soldier : MonoBehaviour {
     
     SoldierAnimatorController animations;
 
+    // gizmos
+    const float climbDetectionRange = 0.8f;
+    bool running = false;
+    
     private void Start() {
         RegisterSoldier();
         animations = GetComponent<SoldierAnimatorController>();
@@ -100,7 +104,7 @@ public class Soldier : MonoBehaviour {
         // Note: maybe need different animations when going over wall.(node has different height)
         if (animations)
             animations.RunAnimation("Run");
-
+        running = false;
         //cinematicsRunning = true;
         for (int i = 0; i < hitSlot.Length; i++) {
             MapNode node = hitSlot[hitSlot.Length - i - 1];
@@ -110,21 +114,61 @@ public class Soldier : MonoBehaviour {
                     float slowDown = i == 0 ? Mathf.Clamp(dir.magnitude, 0f, 1f) : 1f;
                     transform.Translate(dir.normalized * slowDown * Time.deltaTime * movementSpeed);
                 }else 
-                if (movementMode == 1) { // moves and rotates towards point
+                if (movementMode == 1) { // >active<moves and rotates towards point, standard for animated characters
+                    Debug.Log("move 1");
+                    running = true;
                     Vector3 dir = node.pos - transform.position;
                     float slowDown = i == 0 ? Mathf.Clamp(dir.magnitude, 0f, 1f) : 1f;
                     transform.forward = dir.normalized;
                     transform.Translate(Vector3.forward * slowDown * Time.deltaTime * movementSpeed);
+
+                    RaycastHit h = UpRaycast(transform.position+offset, climbDetectionRange);
+                    if (h.transform!= null && h.transform.tag == "JumpOver") {
+                        if (animations)
+                            animations.TriggerAnimation("ClimbOver");
+                    }
                 }
                 yield return null;
             }
         }
+        running = false;
         //cinematicsRunning = false;
+        /* 2 ways:
+         * - raycast
+         * constant short forward raycast
+         * -- Flimsy?
+         * - collisions
+         * on hit, 
+         * ++ ez to implement, non general solution
+         * */
 
         if (animations) {
             animations.StopAnimation("Run");
         }
     }
+    public Vector3 offset = new Vector3(0, 1, 0);
+    private void OnDrawGizmos() {
+        Gizmos.color = Color.red;
+        Debug.Log("draw gizmos");
+        //if(running)
+            Gizmos.DrawRay(transform.position+offset, transform.forward * climbDetectionRange);
+    }
+
+    RaycastHit UpRaycast(Vector3 point, float len) {
+        RaycastHit hit;
+        Ray ray = new Ray(point, transform.forward*len);
+        bool cast = Physics.Raycast(ray,
+            out hit,
+            len,
+            1 << LayerMask.NameToLayer(GridSlot.groundLayerName),
+            QueryTriggerInteraction.Ignore
+            );
+        if (cast) {
+            //return hit.point;
+        }
+        return hit;
+    }
+
     internal IEnumerator Cinematics_Shoot(GridSlot slot) {
         cinematicsRunning = true;
         yield return StartCoroutine(Cinematics_StandAndTurn(slot));

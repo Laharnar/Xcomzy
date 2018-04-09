@@ -54,18 +54,24 @@ public class MapGrid:MonoBehaviour {
         RaycastHit h3 = GetByRaycast(point + Vector3.forward * 0.01f + Vector3.right * 0.01f, height);
         RaycastHit h4 = GetByRaycast(point + Vector3.back * 0.01f + Vector3.right * 0.01f, height);
         SlotType max = SlotType.Walkable;
-        Debug.Log(h1.transform);
-        if (h1.transform != null) 
-            max = (SlotType)Mathf.Max((int)max, (int)h1.transform.GetComponent<LevelItemType>().itemPassabilityType);
-        if (h2.transform != null)
-            max = (SlotType)Mathf.Max((int)max, (int)h2.transform.GetComponent<LevelItemType>().itemPassabilityType);
-        if (h3.transform != null)
-            max = (SlotType)Mathf.Max((int)max, (int)h3.transform.GetComponent<LevelItemType>().itemPassabilityType);
-        if (h4.transform != null)
-            max = (SlotType)Mathf.Max((int)max, (int)h4.transform.GetComponent<LevelItemType>().itemPassabilityType);
+        //        Debug.Log(h1.transform);
+        max = MaxCompatibilityType(h1, max);
+        max = MaxCompatibilityType(h2, max);
+        max = MaxCompatibilityType(h3, max);
+        max = MaxCompatibilityType(h4, max);
         return max;
     }
 
+    private SlotType MaxCompatibilityType(RaycastHit h1, SlotType max) {
+        if (h1.transform != null) {
+            LevelItemType c = h1.transform.GetComponent<LevelItemType>();
+            if (c == null) { Debug.LogError("Err: missing level  item type"+h1.transform.name, h1.transform); }
+            else
+                max = (SlotType)Mathf.Max((int)max, (int)c.itemPassabilityType);
+        }
+        return max;
+    }
+    
     static bool IsBelowRange(int id, float range) {
         // Checks if point is in low cover range
         return wholeMap[id].pos.y < range;
@@ -73,14 +79,17 @@ public class MapGrid:MonoBehaviour {
 
     private void OnDrawGizmos() {
         for (int i = 0; i < wholeMap.Count; i++) {
+            float h = 0.5f;
             Gizmos.color = Color.red;
             if (wholeMap[i].nodeType == SlotType.Walkable) {
                 Gizmos.color = Color.green;
+                h = 0.5f;
             }
             if (wholeMap[i].nodeType == SlotType.ThinWall) {
                 Gizmos.color = Color.yellow;
+                h = 2f;
             }
-            Gizmos.DrawLine(wholeMap[i].pos, wholeMap[i].pos + Vector3.up);
+            Gizmos.DrawLine(wholeMap[i].pos, wholeMap[i].pos + Vector3.up*h);
         }
     }
     public static RaycastHit GetByRaycast(Vector3 vec, float raycastFromHeight, float minHeight = -10) {

@@ -544,6 +544,7 @@ GameObject:
   - component: {fileID: 653511174}
   - component: {fileID: 653511173}
   - component: {fileID: 653511172}
+  - component: {fileID: 653511176}
   m_Layer: 8
   m_Name: Cube (1)
   m_TagString: Untagged
@@ -615,6 +616,18 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 3
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &653511176
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 653511171}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e278fb3e6087b1845b2e2eaa3c0472c1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  itemPassabilityType: 0
 --- !u!1001 &708643764
 Prefab:
   m_ObjectHideFlags: 0
@@ -854,18 +867,6 @@ Prefab:
     - target: {fileID: 1304508394395160, guid: 66fc46bcef1985e44b92fc0fafdeadc1, type: 2}
       propertyPath: m_Name
       value: ThinWall (5)
-      objectReference: {fileID: 0}
-    - target: {fileID: 4908544653571116, guid: 66fc46bcef1985e44b92fc0fafdeadc1, type: 2}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 90
-      objectReference: {fileID: 0}
-    - target: {fileID: 4908544653571116, guid: 66fc46bcef1985e44b92fc0fafdeadc1, type: 2}
-      propertyPath: m_LocalScale.x
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 4908544653571116, guid: 66fc46bcef1985e44b92fc0fafdeadc1, type: 2}
-      propertyPath: m_LocalScale.z
-      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_ParentPrefab: {fileID: 100100000, guid: 66fc46bcef1985e44b92fc0fafdeadc1, type: 2}
