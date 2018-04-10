@@ -1,7 +1,10 @@
 ﻿using System;
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
+
+/*public abstract class SoldierAttack {
+
+}*/
 
 /// <summary>
 /// Soldier moves on grid slots.
@@ -27,15 +30,19 @@ public class Soldier : MonoBehaviour {
     [Header("Stats")]
     public int hp = 1;
     public float grenadeRange = 5;
+    public int actions = 2;
+    public int movementRange1 = 8; // ********** TODO, implement limit into movement.
+    public int movementRange2 = 7; // ********** TODO, implement limit into movement. summed to mr1
 
     [Header("Cinematics")]
     public float movementSpeed = 1;
 
+    public Vector3 offset = new Vector3(0, 1, 0);
 
     public bool inOverwatch = false;
     [SerializeField] bool running = false;
     [SerializeField] bool cinematicsRunning = false;
-    
+
     SoldierAnimatorController animations;
 
     /// <summary>
@@ -43,13 +50,15 @@ public class Soldier : MonoBehaviour {
     /// Values are 0-2, 0 is ground, 1 half cover, 2 full cover.
     /// </summary>
     public int curCoverHeight { get; private set; }
+    public int actionsLeft { get; private set; }
 
     // gizmos
     const float climbDetectionRange = 0.8f;
     // -- end gizmos
-    
+
     private void Start() {
         RegisterSoldier();
+        actionsLeft = actions;
         animations = GetComponent<SoldierAnimatorController>();
         if (animations == null) {
             Debug.LogWarning("Missing SoldierAnimatorController component on "+name+". Could be intentional.", transform);
@@ -65,17 +74,21 @@ public class Soldier : MonoBehaviour {
         soldierCounts[allianceId]++;
     }
 
+    internal bool NearEnough(int length) {
+        return actionsLeft == 2 ? length <= movementRange1 + movementRange2
+            : actionsLeft == 1 ? length <= movementRange2 : false;
+    }
+
     /*private void TryAttackSlot(RaycastHit hit, SoldierAttack attack) {
         throw new NotImplementedException();
     }*/
 
-    public bool MoveToSlot(GridSlot hitSlot, bool cinematics=true) {
-        
+    public bool MoveToSlot(GridSlot hitSlot, MapNode[] path, bool cinematics=true) {
+        UseActions(1);
+
         if (hitSlot.taken == true)  // can't move on top of other units
             return false;
         if (cinematics) {
-            
-            MapNode[] path = Pathfinding.FindPathAStar(curPositionSlot.transform.position, hitSlot.transform.position, MapGrid.wholeMap);
             if (path.Length == 0)
                 return false;
             StartCoroutine(Cinematics_MoveOnPath(path));
@@ -156,7 +169,6 @@ public class Soldier : MonoBehaviour {
             animations.StopAnimation("Run");
         }
     }
-    public Vector3 offset = new Vector3(0, 1, 0);
     private void OnDrawGizmos() {
         Gizmos.color = Color.red;
         Debug.Log("draw gizmos");
@@ -206,9 +218,11 @@ public class Soldier : MonoBehaviour {
         if (attackCanHappen) {
             // grenade
             if (attackType == 1) {
+                UseActions(2);
                 AoeDamage(grenadeRange, hitSlot);
                 StartCoroutine(Cinematics_Throw("Grenade type 1", hitSlot));
             } else {
+                UseActions(2);
                 // single shot
                 Soldier otherUnit = hitSlot.taken;
                 otherUnit.Damage(1);
@@ -219,6 +233,7 @@ public class Soldier : MonoBehaviour {
     }
 
     private IEnumerator Cinematics_Throw(string projectile, GridSlot hitSlot) {
+        UseActions(2);
         cinematicsRunning = false;
         yield return StartCoroutine(Cinematics_StandAndTurn(hitSlot));
         if (animations)
@@ -246,6 +261,7 @@ public class Soldier : MonoBehaviour {
     }
 
     public void AoeDamage(float range, GridSlot slot) {
+        UseActions(2);
         // Make aoe dmg in range
         GridSlot[] slots = GridSlot.GetSlotsInRange(slot, range);
 
@@ -258,7 +274,12 @@ public class Soldier : MonoBehaviour {
     }
 
     internal void ToOverwatch() {
+        UseActions(2);
         inOverwatch = true;
+    }
+
+    void UseActions(int num) {
+        actionsLeft = Mathf.Clamp(actionsLeft, 0, actions);
     }
 }
 

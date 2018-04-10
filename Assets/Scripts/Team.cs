@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class Team {
@@ -8,7 +9,8 @@ public class Team {
     public Soldier ActiveSoldier { get { return units[activePlayerSoldier]; } }
 
     public void InitUnitPos(GridSlot hitSlot) {
-        bool moveOk = ActiveSoldier.MoveToSlot(hitSlot, false);
+        MapNode[] path = Pathfinding.FindPathAStar(ActiveSoldier.curPositionSlot.transform.position, hitSlot.transform.position, MapGrid.wholeMap);
+        bool moveOk = ActiveSoldier.MoveToSlot(hitSlot, path, false);
         if (!moveOk) {
             ActiveSoldier.AttackSlot(hitSlot);
         }
@@ -43,5 +45,13 @@ public class Team {
 
     internal void NextSoldier() {
         activePlayerSoldier = (activePlayerSoldier + 1) % units.Count;
+    }
+
+    internal bool AnySoldierActionsLeft() {
+        for (int i = 0; i < units.Count; i++) {
+            if (units[i].actionsLeft > 0)
+                return true;
+        }
+        return false;
     }
 }

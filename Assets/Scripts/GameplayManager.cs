@@ -57,8 +57,9 @@ public class GameplayManager : MonoBehaviour {
             // *** PLAYER ***
             // Right click on any slot moves active unit there.
             GridSlot hitSlot = GetGridUnderMouse();
+            MapNode[] path = Pathfinding.FindPathAStar(playerFlag.ActiveSoldier.curPositionSlot.transform.position, hitSlot.transform.position, MapGrid.wholeMap);
 
-            if (hitSlot && Input.GetMouseButtonDown(1)) {
+            if (hitSlot && Input.GetMouseButtonDown(1) && playerFlag.ActiveSoldier.NearEnough(path.Length)) {
                 attackCommand = 1;
                 if (hitSlot.HasEnemy()) {
                     // Require 2 clicks to auto attack enemy
@@ -68,17 +69,17 @@ public class GameplayManager : MonoBehaviour {
                         clickedEnemyOnce = false;
                         //flags[0].MoveActiveToRaycastedPoint(hit);
                         playerFlag.ActiveSoldier.AttackSlot(hitSlot);
-                        EndSoldiersTurn();
+                        SwapSoldier();
                     }
                 } else {
-                    if (playerFlag.ActiveSoldier.MoveToSlot(hitSlot)) {
+                    if (playerFlag.ActiveSoldier.MoveToSlot(hitSlot, path)) {
                         // enemies in overwatch fire at player's soldier when it moves.
                         HandleOverwatchWithoutFog(playerFlag.ActiveSoldier, flags[1]);
                         
                         yield return playerFlag.ActiveSoldier.CinematicsDone();
                         playerFlag.ActiveSoldier.HandleCover();
 
-                        EndSoldiersTurn();
+                        SwapSoldier();
                     }
                 }
             }
@@ -92,7 +93,7 @@ public class GameplayManager : MonoBehaviour {
                 else {
                     clickedEnemyOnce = false;
                     playerFlag.ActiveSoldier.AttackSlot(nearestEnemy.curPositionSlot);
-                    EndSoldiersTurn();
+                    SwapSoldier();
                 }
             }
 
@@ -114,7 +115,7 @@ public class GameplayManager : MonoBehaviour {
                 } else {
                     clickedEnemyOnce = false;
                     playerFlag.ActiveSoldier.ToOverwatch();
-                    EndSoldiersTurn();
+                    SwapSoldier();
                 }
             }
             // FIXED: it will work to click on enemy with right click and then 1.
@@ -125,7 +126,8 @@ public class GameplayManager : MonoBehaviour {
 
             // tabbing swaps units
             if (Input.GetKeyDown(KeyCode.Tab)) {
-                EndSoldiersTurn();
+                
+                SwapSoldier();
             }
 
             // *** ENEMIES ***
@@ -150,8 +152,12 @@ public class GameplayManager : MonoBehaviour {
         }
     }
 
-    void EndSoldiersTurn() {
-        playerFlag.NextSoldier();
-        PlayerCamera.ResetFocus();
+    void SwapSoldier() {
+        if (playerFlag.AnySoldierActionsLeft()) {
+            while (playerFlag.ActiveSoldier.actionsLeft == 0) {
+                playerFlag.NextSoldier();
+            }
+            PlayerCamera.ResetFocus();
+        }
     }
 }
