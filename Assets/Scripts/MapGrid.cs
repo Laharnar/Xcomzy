@@ -62,6 +62,10 @@ public class MapGrid:MonoBehaviour {
         return max;
     }
 
+    internal static bool OnlyGround(GridSlot curPositionSlot) {
+        return AllUnderRange(curPositionSlot, 0.5f);
+    }
+
     private SlotType MaxCompatibilityType(RaycastHit h1, SlotType max) {
         if (h1.transform != null) {
             LevelItemType c = h1.transform.GetComponent<LevelItemType>();

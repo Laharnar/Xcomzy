@@ -22,25 +22,31 @@ public class Soldier : MonoBehaviour {
     /// How many soldiers are on each side, 1 integer per alliance id
     /// </summary>
     static int[] soldierCounts = new int[2];
-
-
     public int allianceId = 0;
 
-    // stats
+    [Header("Stats")]
     public int hp = 1;
     public float grenadeRange = 5;
 
-    public bool inOverwatch = false;
-
     [Header("Cinematics")]
     public float movementSpeed = 1;
-    bool cinematicsRunning = false;
+
+
+    public bool inOverwatch = false;
+    [SerializeField] bool running = false;
+    [SerializeField] bool cinematicsRunning = false;
     
     SoldierAnimatorController animations;
 
+    /// <summary>
+    /// Use when updating ui.
+    /// Values are 0-2, 0 is ground, 1 half cover, 2 full cover.
+    /// </summary>
+    public int curCoverHeight { get; private set; }
+
     // gizmos
     const float climbDetectionRange = 0.8f;
-    bool running = false;
+    // -- end gizmos
     
     private void Start() {
         RegisterSoldier();
@@ -83,12 +89,16 @@ public class Soldier : MonoBehaviour {
         
         return true;
     }
-
     internal void HandleCover() {
         if (animations) {
-            if (MapGrid.OnlyLowCover(curPositionSlot)) {
+            if (MapGrid.OnlyGround(curPositionSlot)) {
+                curCoverHeight = 0;
+                animations.StopAnimation("Crouch");
+            } else if (MapGrid.OnlyLowCover(curPositionSlot)) {
+                curCoverHeight = 1;
                 animations.RunAnimation("Crouch");
             } else {
+                curCoverHeight = 2;
                 animations.StopAnimation("Crouch");
             }
         }
