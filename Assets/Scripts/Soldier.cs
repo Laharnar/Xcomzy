@@ -51,10 +51,13 @@ public class Soldier : MonoBehaviour {
     /// </summary>
     public int curCoverHeight { get; private set; }
     public int actionsLeft { get; private set; }
+    public int activeCommand { get; private set; } // attack, grenade, etc
 
     // gizmos
     const float climbDetectionRange = 0.8f;
     // -- end gizmos
+
+    public Gun gun;
 
     private void Start() {
         RegisterSoldier();
@@ -84,7 +87,7 @@ public class Soldier : MonoBehaviour {
     }*/
 
     public bool MoveToSlot(GridSlot hitSlot, MapNode[] path, bool cinematics=true) {
-        UseActions(1);
+        ConsumeActions(1);
 
         if (hitSlot.taken == true)  // can't move on top of other units
             return false;
@@ -218,12 +221,13 @@ public class Soldier : MonoBehaviour {
         if (attackCanHappen) {
             // grenade
             if (attackType == 1) {
-                UseActions(2);
+                ConsumeActions(2);
                 AoeDamage(grenadeRange, hitSlot);
                 StartCoroutine(Cinematics_Throw("Grenade type 1", hitSlot));
             } else {
-                UseActions(2);
                 // single shot
+                gun.Fire("Standard");
+                ConsumeActions(2);
                 Soldier otherUnit = hitSlot.taken;
                 otherUnit.Damage(1);
                 StartCoroutine(Cinematics_Shoot(hitSlot));
@@ -233,7 +237,7 @@ public class Soldier : MonoBehaviour {
     }
 
     private IEnumerator Cinematics_Throw(string projectile, GridSlot hitSlot) {
-        UseActions(2);
+        ConsumeActions(2);
         cinematicsRunning = false;
         yield return StartCoroutine(Cinematics_StandAndTurn(hitSlot));
         if (animations)
@@ -259,9 +263,13 @@ public class Soldier : MonoBehaviour {
             Destroy(gameObject);
         }
     }
+    public void Reload() {
+        ConsumeActions(2);
+        gun.Reload();
+    }
 
     public void AoeDamage(float range, GridSlot slot) {
-        UseActions(2);
+        ConsumeActions(2);
         // Make aoe dmg in range
         GridSlot[] slots = GridSlot.GetSlotsInRange(slot, range);
 
@@ -274,11 +282,11 @@ public class Soldier : MonoBehaviour {
     }
 
     internal void ToOverwatch() {
-        UseActions(2);
+        ConsumeActions(2);
         inOverwatch = true;
     }
 
-    void UseActions(int num) {
+    void ConsumeActions(int num) {
         actionsLeft = Mathf.Clamp(actionsLeft, 0, actions);
     }
 }

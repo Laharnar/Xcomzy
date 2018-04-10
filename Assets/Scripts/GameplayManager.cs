@@ -14,12 +14,13 @@ public class GameplayManager : MonoBehaviour {
 
     public Team playerFlag { get { return flags[0]; } }
 
-    bool clickedEnemyOnce = false;
+    bool clickedOnce = false;
 
-    int attackCommand = 0;
+    public int attackCommand { get; private set; }
 
     // Use this for initialization
     void Start() {
+        attackCommand = -1;
 
         m = this;
 
@@ -63,10 +64,10 @@ public class GameplayManager : MonoBehaviour {
                 attackCommand = 1;
                 if (hitSlot.HasEnemy()) {
                     // Require 2 clicks to auto attack enemy
-                    if (!clickedEnemyOnce)
-                        clickedEnemyOnce = true;
+                    if (!clickedOnce)
+                        clickedOnce = true;
                     else {
-                        clickedEnemyOnce = false;
+                        clickedOnce = false;
                         //flags[0].MoveActiveToRaycastedPoint(hit);
                         playerFlag.ActiveSoldier.AttackSlot(hitSlot);
                         SwapSoldier();
@@ -88,10 +89,10 @@ public class GameplayManager : MonoBehaviour {
             if (Input.GetKeyDown(KeyCode.Alpha1)) {
                 attackCommand = 2;
                 Soldier nearestEnemy = flags[1].GetNearestTo(playerFlag.ActiveSoldier);
-                if (!clickedEnemyOnce)
-                    clickedEnemyOnce = true;
+                if (!clickedOnce)
+                    clickedOnce = true;
                 else {
-                    clickedEnemyOnce = false;
+                    clickedOnce = false;
                     playerFlag.ActiveSoldier.AttackSlot(nearestEnemy.curPositionSlot);
                     SwapSoldier();
                 }
@@ -100,28 +101,40 @@ public class GameplayManager : MonoBehaviour {
             // grenade throw
             if (hitSlot && Input.GetKeyDown(KeyCode.Alpha3)) {
                 attackCommand = 3;
-                if (!clickedEnemyOnce) {
-                    clickedEnemyOnce = true;
+                if (!clickedOnce) {
+                    clickedOnce = true;
                 } else {
-                    clickedEnemyOnce = false;
+                    clickedOnce = false;
                     playerFlag.ActiveSoldier.AttackSlot(hitSlot, 1);
                 }
             }
             // overwatch throw
             if (Input.GetKeyDown(KeyCode.Alpha2)) {
                 attackCommand = 4;
-                if (!clickedEnemyOnce) {
-                    clickedEnemyOnce = true;
+                if (!clickedOnce) {
+                    clickedOnce = true;
                 } else {
-                    clickedEnemyOnce = false;
+                    clickedOnce = false;
                     playerFlag.ActiveSoldier.ToOverwatch();
                     SwapSoldier();
                 }
             }
-            // FIXED: it will work to click on enemy with right click and then 1.
-            // makes sure you can't do mouse+something else attack
+            // reload
+            if (Input.GetKeyDown(KeyCode.R)) {
+                attackCommand = 5;
+                if (!clickedOnce) {
+                    clickedOnce = true;
+                } else {
+                    clickedOnce = false;
+                    playerFlag.ActiveSoldier.Reload();
+                    SwapSoldierIfNoTurns();
+                }
+            }
+
+                // FIXED: it will work to click on enemy with right click and then 1.
+                // makes sure you can't do mouse+something else attack
             if (attackCommand != lastCommand && lastCommand != 0) {
-                clickedEnemyOnce = false;
+                clickedOnce = false;
             }
 
             // tabbing swaps units
@@ -142,11 +155,18 @@ public class GameplayManager : MonoBehaviour {
         }
     }
 
+    private void SwapSoldierIfNoTurns() {
+        if (playerFlag.ActiveSoldier.actionsLeft == 0) {
+            SwapSoldier();
+        }
+    }
+
     private void HandleOverwatchWithoutFog(Soldier activeSoldier, Team otherTeam) {
         for (int i = 0; i < otherTeam.units.Count; i++) {
             if (otherTeam.units[i].inOverwatch) {
                 otherTeam.units[i].AttackSlot(activeSoldier.curPositionSlot);
                 otherTeam.units[i].inOverwatch = false;
+                otherTeam.units[i].gun.Fire("Overwatch");
                 otherTeam.units[i].StartCoroutine(otherTeam.units[i].Cinematics_Shoot(activeSoldier.curPositionSlot));
             }
         }
@@ -159,5 +179,6 @@ public class GameplayManager : MonoBehaviour {
             }
             PlayerCamera.ResetFocus();
         }
+        attackCommand = -1;
     }
 }
