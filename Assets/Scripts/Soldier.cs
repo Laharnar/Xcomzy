@@ -19,7 +19,7 @@ public class Soldier : MonoBehaviour {
     /// </summary>
     internal GridSlot curPositionSlot { get; private set; }
 
-    int soldierId = 0;
+    public int soldierId { get; private set; }
 
     /// <summary>
     /// How many soldiers are on each side, 1 integer per alliance id

@@ -17,6 +17,7 @@ public class GameplayManager : MonoBehaviour {
     bool clickedOnce = false;
 
     public int attackCommand { get; private set; }
+    public int targetedEnemy { get; private set; }
 
     // Use this for initialization
     void Start() {
@@ -68,6 +69,7 @@ public class GameplayManager : MonoBehaviour {
                         clickedOnce = true;
                     else {
                         clickedOnce = false;
+                        targetedEnemy = hitSlot.taken.soldierId;
                         //flags[0].MoveActiveToRaycastedPoint(hit);
                         playerFlag.ActiveSoldier.AttackSlot(hitSlot);
                         SwapSoldier();
@@ -89,6 +91,7 @@ public class GameplayManager : MonoBehaviour {
             if (Input.GetKeyDown(KeyCode.Alpha1)) {
                 attackCommand = 2;
                 Soldier nearestEnemy = flags[1].GetNearestTo(playerFlag.ActiveSoldier);
+                targetedEnemy = nearestEnemy.soldierId;
                 if (!clickedOnce)
                     clickedOnce = true;
                 else {
@@ -108,7 +111,7 @@ public class GameplayManager : MonoBehaviour {
                     playerFlag.ActiveSoldier.AttackSlot(hitSlot, 1);
                 }
             }
-            // overwatch throw
+            // overwatch
             if (Input.GetKeyDown(KeyCode.Alpha2)) {
                 attackCommand = 4;
                 if (!clickedOnce) {
@@ -139,8 +142,11 @@ public class GameplayManager : MonoBehaviour {
 
             // tabbing swaps units
             if (Input.GetKeyDown(KeyCode.Tab)) {
-                
-                SwapSoldier();
+                if (targetedEnemy == -1)
+                    SwapSoldier();
+                else {
+                    SwapTarget();
+                }
             }
 
             // *** ENEMIES ***
@@ -153,6 +159,11 @@ public class GameplayManager : MonoBehaviour {
             }
             yield return null;
         }
+    }
+
+    private void SwapTarget() {
+        targetedEnemy = (targetedEnemy + 1) % flags[1].units.Count;
+        PlayerCamera.ResetFocus();
     }
 
     private void SwapSoldierIfNoTurns() {
@@ -180,5 +191,6 @@ public class GameplayManager : MonoBehaviour {
             PlayerCamera.ResetFocus();
         }
         attackCommand = -1;
+        targetedEnemy = -1;
     }
 }
