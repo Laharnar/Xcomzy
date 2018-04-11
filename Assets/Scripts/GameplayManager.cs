@@ -7,7 +7,7 @@ using UnityEngine;
 /// <summary>
 /// Controls enemy turn/player turn cycle and player's soldier cycle
 /// </summary>
-public class GameplayManager : MonoBehaviour {
+public partial class GameplayManager : MonoBehaviour {
     public static GameplayManager m;
 
     Team[] flags = new Team[2];
@@ -18,6 +18,9 @@ public class GameplayManager : MonoBehaviour {
 
     public int attackCommand { get; private set; }
     public int targetedEnemy { get; private set; }
+    public static bool IsPlayerTurn { get; internal set; }
+
+    public GlobalUI ui;
 
     // Use this for initialization
     void Start() {
@@ -55,6 +58,9 @@ public class GameplayManager : MonoBehaviour {
     // Update is called once per frame
     IEnumerator CinematicUpdate() {
         while (true) {
+            // for now, it's always player's turn.
+            IsPlayerTurn = true;
+
             int lastCommand = attackCommand;
             // *** PLAYER ***
             // Right click on any slot moves active unit there.

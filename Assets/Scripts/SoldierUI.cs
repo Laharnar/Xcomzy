@@ -2,7 +2,7 @@
 using UnityEngine.UI;
 public class SoldierUI :MonoBehaviour {
     public Soldier source;
-    public Sprite coverNone, coverLow, coverHigh;
+    public Image coverNone, coverLow, coverHigh;
 
     public Image coverImgTarget;
 
@@ -10,11 +10,38 @@ public class SoldierUI :MonoBehaviour {
 
     public Image[] ammoUi;
 
-    public RectTransform[] abilitiesUi;
-    public RectTransform selectedAbilityCursor;
+
+
+    private void Update() {
+        bool showGlobalUi = false;
+        if (GameplayManager.m.playerFlag.ActiveSoldier.soldierId == source.soldierId) {
+            showGlobalUi = true;
+        }
+
+        UpdateHpUi();
+        UpdateAmmoUi(showGlobalUi);
+        UpdateCoverUI();
+    }
 
     public void UpdateCoverUI() {
         switch (source.curCoverHeight) {
+            case 0:
+                coverNone.enabled = true;
+                coverLow.enabled = false;
+                coverHigh.enabled = false;
+                break;
+            case 1:
+                coverLow.enabled = true;
+                coverNone.enabled = false;
+                coverHigh.enabled = false;
+                break;
+            case 2:
+                coverHigh.enabled = true;
+                coverNone.enabled = false;
+                coverLow.enabled = false;
+                break;
+        }
+        /*switch (source.curCoverHeight) {
             case 0:
                 coverImgTarget.sprite = coverNone;
                 break;
@@ -24,7 +51,7 @@ public class SoldierUI :MonoBehaviour {
             case 2:
                 coverImgTarget.sprite = coverHigh;
                 break;
-        }
+        }*/
     }
 
     public void UpdateHpUi() {
@@ -32,15 +59,11 @@ public class SoldierUI :MonoBehaviour {
             hpUi[i].enabled = i < source.hp;
         }
     }
-    public void UpdateAmmoUi() {
+    public void UpdateAmmoUi(bool visible) {
         for (int i = 0; i < ammoUi.Length; i++) {
-            ammoUi[i].enabled = i < source.gun.ammoLeft;
+            ammoUi[i].enabled = visible && i < source.gun.ammoLeft;
         }
     }
-    public void UpdateSelectedAbility() {
-        if (GameplayManager.m.attackCommand == -1)
-            selectedAbilityCursor.position = new Vector3(0, 0, 0);
-        else 
-            selectedAbilityCursor.position = abilitiesUi[GameplayManager.m.attackCommand].position;
-    }
+
+    
 }
