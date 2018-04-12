@@ -31,6 +31,8 @@ public class Team {
     }
 
     internal Soldier GetNearestTo(Soldier soldier) {
+        if (units.Count == 0)
+            return null;
         float dist = float.MaxValue;
         int best = 0;
         for (int i = 0; i < units.Count; i++) {

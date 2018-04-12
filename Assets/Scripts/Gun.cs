@@ -5,7 +5,9 @@ public class Gun : MonoBehaviour {
     [SerializeField] int ammo=4;
     
     public int ammoLeft { get; private set; }
-
+    private void Start() {
+        ammoLeft = ammo;
+    }
     public void Fire(string shotType) {
         // standard shot
         if (shotType == "Standard") {

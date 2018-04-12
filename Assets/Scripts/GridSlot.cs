@@ -100,6 +100,8 @@ public class GridSlot : MonoBehaviour {
     internal static GridSlot[] GetSlotsInRange(GridSlot slot, float range) {
         List<GridSlot> slots = new List<GridSlot>();
         for (int i = 0; i < allSlots.Count; i++) {
+            if (allSlots[i] == null)
+                continue;
             if (Vector3.Distance(allSlots[i].transform.position, slot.transform.position) <= range) {
                 slots.Add(allSlots[i]);
             }

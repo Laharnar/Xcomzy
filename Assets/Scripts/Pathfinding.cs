@@ -16,7 +16,6 @@ public static class Pathfinding {
         }*/
         
         if (startPos == goalPos) {
-            Debug.Log("goal is same as cur pos");
             return new MapNode[0];
         }
         Dictionary<int, MapNode> nodes = new Dictionary<int, MapNode>();

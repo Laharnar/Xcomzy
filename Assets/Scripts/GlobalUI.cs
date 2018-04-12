@@ -18,10 +18,10 @@ public class GlobalUI:MonoBehaviour {
             abilitiesUi[i].gameObject.SetActive(visible);
         }
 
-        if (GameplayManager.m.attackCommand == -1 || visible == false)
-            selectedSkillCursor.position = new Vector3(0, 0, 0);
+        if (GameplayManager.m.uiCommandKey == -1 || visible == false)
+            selectedSkillCursor.position = new Vector3(-3, 0, 0);
         else
-            selectedSkillCursor.position = abilitiesUi[GameplayManager.m.attackCommand].position;
+            selectedSkillCursor.position = abilitiesUi[GameplayManager.m.uiCommandKey].position;
     }
 
     public void UpdateSelectedEnemyTarget(bool visible) {

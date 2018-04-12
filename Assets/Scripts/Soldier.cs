@@ -87,6 +87,8 @@ public class Soldier : MonoBehaviour {
     }*/
 
     public bool MoveToSlot(GridSlot hitSlot, MapNode[] path, bool cinematics=true) {
+        if (path.Length == 0)
+            return true;
         ConsumeActions(1);
 
         if (hitSlot.taken == true)  // can't move on top of other units
@@ -174,7 +176,7 @@ public class Soldier : MonoBehaviour {
     }
     private void OnDrawGizmos() {
         Gizmos.color = Color.red;
-        Debug.Log("draw gizmos");
+
         //if(running)
             Gizmos.DrawRay(transform.position+offset, transform.forward * climbDetectionRange);
     }

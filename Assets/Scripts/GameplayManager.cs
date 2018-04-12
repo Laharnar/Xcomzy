@@ -16,7 +16,8 @@ public partial class GameplayManager : MonoBehaviour {
 
     bool clickedOnce = false;
 
-    public int attackCommand { get; private set; }
+    public int attackCommand { get; private set; } // which type of attack is being used. attack with right click and 1 is different
+    public int uiCommandKey { get; private set; } // which type of attack ui is being used active. right click and 1 is same
     public int targetedEnemy { get; private set; }
     public static bool IsPlayerTurn { get; internal set; }
 
@@ -25,6 +26,7 @@ public partial class GameplayManager : MonoBehaviour {
     // Use this for initialization
     void Start() {
         attackCommand = -1;
+        uiCommandKey = -1;
 
         m = this;
 
@@ -65,11 +67,16 @@ public partial class GameplayManager : MonoBehaviour {
             // *** PLAYER ***
             // Right click on any slot moves active unit there.
             GridSlot hitSlot = GetGridUnderMouse();
+            if (hitSlot == null) {
+                yield return null;
+                continue;
+            }
             MapNode[] path = Pathfinding.FindPathAStar(playerFlag.ActiveSoldier.curPositionSlot.transform.position, hitSlot.transform.position, MapGrid.wholeMap);
 
             if (hitSlot && Input.GetMouseButtonDown(1) && playerFlag.ActiveSoldier.NearEnough(path.Length)) {
-                attackCommand = 1;
                 if (hitSlot.HasEnemy()) {
+                    attackCommand = 1;
+                    uiCommandKey = 0;
                     // Require 2 clicks to auto attack enemy
                     if (!clickedOnce)
                         clickedOnce = true;
@@ -81,6 +88,9 @@ public partial class GameplayManager : MonoBehaviour {
                         SwapSoldier();
                     }
                 } else {
+                    attackCommand = -1;
+                    targetedEnemy = -1;
+                    uiCommandKey = -1;
                     if (playerFlag.ActiveSoldier.MoveToSlot(hitSlot, path)) {
                         // enemies in overwatch fire at player's soldier when it moves.
                         HandleOverwatchWithoutFog(playerFlag.ActiveSoldier, flags[1]);
@@ -96,20 +106,24 @@ public partial class GameplayManager : MonoBehaviour {
             // fire at nearest enemy
             if (Input.GetKeyDown(KeyCode.Alpha1)) {
                 attackCommand = 2;
+                uiCommandKey = 0;
                 Soldier nearestEnemy = flags[1].GetNearestTo(playerFlag.ActiveSoldier);
-                targetedEnemy = nearestEnemy.soldierId;
-                if (!clickedOnce)
-                    clickedOnce = true;
-                else {
-                    clickedOnce = false;
-                    playerFlag.ActiveSoldier.AttackSlot(nearestEnemy.curPositionSlot);
-                    SwapSoldier();
+                if (nearestEnemy) {
+                    targetedEnemy = nearestEnemy.soldierId;
+                    if (!clickedOnce)
+                        clickedOnce = true;
+                    else {
+                        clickedOnce = false;
+                        playerFlag.ActiveSoldier.AttackSlot(nearestEnemy.curPositionSlot);
+                        SwapSoldier();
+                    }
                 }
             }
 
             // grenade throw
             if (hitSlot && Input.GetKeyDown(KeyCode.Alpha3)) {
                 attackCommand = 3;
+                uiCommandKey = 2;
                 if (!clickedOnce) {
                     clickedOnce = true;
                 } else {
@@ -120,6 +134,7 @@ public partial class GameplayManager : MonoBehaviour {
             // overwatch
             if (Input.GetKeyDown(KeyCode.Alpha2)) {
                 attackCommand = 4;
+                uiCommandKey = 1;
                 if (!clickedOnce) {
                     clickedOnce = true;
                 } else {
@@ -131,6 +146,7 @@ public partial class GameplayManager : MonoBehaviour {
             // reload
             if (Input.GetKeyDown(KeyCode.R)) {
                 attackCommand = 5;
+                uiCommandKey = 3;
                 if (!clickedOnce) {
                     clickedOnce = true;
                 } else {
@@ -198,5 +214,6 @@ public partial class GameplayManager : MonoBehaviour {
         }
         attackCommand = -1;
         targetedEnemy = -1;
+        uiCommandKey = -1;
     }
 }
