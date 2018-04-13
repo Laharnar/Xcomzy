@@ -9,8 +9,14 @@ public class MapGrid:MonoBehaviour {
     public static List<MapNode> wholeMap {
         get {
             if (_wholeMap == null) {
-                Debug.Log("Maybe MapGrid object isn't in scene.");
-            } return _wholeMap; } private set { _wholeMap = value; } }
+                InitSingleton();
+                if (_wholeMap == null)
+                    Debug.Log("Maybe MapGrid object isn't in scene.");
+            }
+            return _wholeMap;
+        }
+        private set { _wholeMap = value; }
+    }
     static List<MapNode> _wholeMap;
     static List<bool> mask;
 
@@ -20,6 +26,7 @@ public class MapGrid:MonoBehaviour {
 
     //public GridGenerator wh;
     void Init() {//Start
+
         wholeMap = new List<MapNode>();
         // detect map
         for (int i = 0; i < GridSlot.slotPositions.Count; i++) {
@@ -82,6 +89,7 @@ public class MapGrid:MonoBehaviour {
     }
 
     private void OnDrawGizmos() {
+        if (wholeMap != null)
         for (int i = 0; i < wholeMap.Count; i++) {
             float h = 0.5f;
             Gizmos.color = Color.red;

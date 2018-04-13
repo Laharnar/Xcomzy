@@ -18,11 +18,7 @@ public class GridGenerator:MonoBehaviour {
         MakeGrid(w, l, transform.position.z);
 
     }
-
-    private void Start() {
-        MapGrid.InitSingleton();
-
-    }
+    
 
     private void MakeGrid(int w, int l, float hpos) {
         for (int i = 0; i < w; i++) {
