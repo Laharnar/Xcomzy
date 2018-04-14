@@ -8,13 +8,11 @@ public class Team {
 
     public Soldier ActiveSoldier { get { return units[activePlayerSoldier]; } }
 
+    public ITurnCycle cycle;
+
     public void InitUnitPos(GridSlot hitSlot) {
         MapNode[] path = Pathfinding.FindPathAStar(ActiveSoldier.curPositionSlot.transform.position, hitSlot.transform.position, MapGrid.wholeMap);
-        bool moveOk = ActiveSoldier.MoveToSlot(hitSlot, path, false);
-        if (!moveOk) {
-            ActiveSoldier.AttackSlot(hitSlot);
-        }
-        NextSoldier();
+        ActiveSoldier.MoveToSlot(hitSlot, path, false);
     }
 
     public void SnapAllUnitsToGround() {

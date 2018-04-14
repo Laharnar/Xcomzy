@@ -10,17 +10,19 @@ public class SoldierUI :MonoBehaviour {
 
     public Image[] ammoUi;
 
+    public Image[] actionsUi;
 
 
     private void Update() {
         bool showGlobalUi = false;
-        if (GameplayManager.m.playerFlag.ActiveSoldier.soldierId == source.soldierId) {
+        if (GameplayManager.IsPlayerTurn 
+            && GameplayManager.m.playerFlag.ActiveSoldier.soldierId == source.soldierId) {
             showGlobalUi = true;
         }
-
         UpdateHpUi();
         UpdateAmmoUi(showGlobalUi);
         UpdateCoverUI();
+        UpdateActionsUi(true);
     }
 
     public void UpdateCoverUI() {
@@ -59,11 +61,16 @@ public class SoldierUI :MonoBehaviour {
             hpUi[i].enabled = i < source.hp;
         }
     }
+
     public void UpdateAmmoUi(bool visible) {
         for (int i = 0; i < ammoUi.Length; i++) {
             ammoUi[i].enabled = visible && i < source.gun.ammoLeft;
         }
     }
 
-    
+    public void UpdateActionsUi(bool visible) {
+        for (int i = 0; i < actionsUi.Length; i++) {
+            actionsUi[i].enabled = visible && i < source.actionsLeft;
+        }
+    }
 }

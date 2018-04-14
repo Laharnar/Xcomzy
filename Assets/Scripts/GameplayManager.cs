@@ -4,47 +4,33 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-/// <summary>
-/// Controls enemy turn/player turn cycle and player's soldier cycle
-/// </summary>
-public partial class GameplayManager : MonoBehaviour {
-    public static GameplayManager m;
+public interface ITurnCycle {
+    IEnumerator TurnCycle(Team team, Team team2);
+    void Reset(Team team);
+}
 
-    Team[] flags = new Team[2];
+class EnemyTurnCycle : ITurnCycle {
+    public void Reset(Team team) {
+    }
 
-    public Team playerFlag { get { return flags[0]; } }
+    public IEnumerator TurnCycle(Team team, Team team2) {
+        // AI calculations list of commands
+        // yield return execute calculated commands and moves
+        yield return new WaitForSeconds(5);
+        Debug.Log("End Enemy turn");
+    }
+}
+class PlayerTurnCycle : ITurnCycle {
 
     bool clickedOnce = false;
 
     public int attackCommand { get; private set; } // which type of attack is being used. attack with right click and 1 is different
     public int uiCommandKey { get; private set; } // which type of attack ui is being used active. right click and 1 is same
     public int targetedEnemy { get; private set; }
-    public static bool IsPlayerTurn { get; internal set; }
 
-    public GlobalUI ui;
-
-    // Use this for initialization
-    void Start() {
+    void Init() {
         attackCommand = -1;
         uiCommandKey = -1;
-
-        m = this;
-
-        for (int i = 0; i < flags.Length; i++) {
-            flags[i] = new Team();
-        }
-
-        // sort all units in scene by their alliance
-        List<Soldier> allUnits = FindObjectsOfType<Soldier>().ToList();
-        for (int i = 0; i < allUnits.Count; i++) {
-            flags[allUnits[i].allianceId].units.Add(allUnits[i]);
-        }
-
-        for (int i = 0; i < flags.Length; i++) {
-            flags[i].SnapAllUnitsToGround();
-        }
-
-        StartCoroutine(CinematicUpdate());
     }
 
     static GridSlot GetGridUnderMouse() {
@@ -57,163 +43,227 @@ public partial class GameplayManager : MonoBehaviour {
         return null;
     }
 
-    // Update is called once per frame
-    IEnumerator CinematicUpdate() {
-        while (true) {
-            // for now, it's always player's turn.
-            IsPlayerTurn = true;
-
-            int lastCommand = attackCommand;
-            // *** PLAYER ***
-            // Right click on any slot moves active unit there.
-            GridSlot hitSlot = GetGridUnderMouse();
-            if (hitSlot == null) {
-                yield return null;
-                continue;
-            }
-            MapNode[] path = Pathfinding.FindPathAStar(playerFlag.ActiveSoldier.curPositionSlot.transform.position, hitSlot.transform.position, MapGrid.wholeMap);
-
-            if (hitSlot && Input.GetMouseButtonDown(1) && playerFlag.ActiveSoldier.NearEnough(path.Length)) {
-                if (hitSlot.HasEnemy()) {
-                    attackCommand = 1;
-                    uiCommandKey = 0;
-                    // Require 2 clicks to auto attack enemy
-                    if (!clickedOnce)
-                        clickedOnce = true;
-                    else {
-                        clickedOnce = false;
-                        targetedEnemy = hitSlot.taken.soldierId;
-                        //flags[0].MoveActiveToRaycastedPoint(hit);
-                        playerFlag.ActiveSoldier.AttackSlot(hitSlot);
-                        SwapSoldier();
-                    }
-                } else {
-                    attackCommand = -1;
-                    targetedEnemy = -1;
-                    uiCommandKey = -1;
-                    if (playerFlag.ActiveSoldier.MoveToSlot(hitSlot, path)) {
-                        // enemies in overwatch fire at player's soldier when it moves.
-                        HandleOverwatchWithoutFog(playerFlag.ActiveSoldier, flags[1]);
-                        
-                        yield return playerFlag.ActiveSoldier.CinematicsDone();
-                        playerFlag.ActiveSoldier.HandleCover();
-
-                        SwapSoldier();
-                    }
-                }
-            }
-
-            // fire at nearest enemy
-            if (Input.GetKeyDown(KeyCode.Alpha1)) {
-                attackCommand = 2;
-                uiCommandKey = 0;
-                Soldier nearestEnemy = flags[1].GetNearestTo(playerFlag.ActiveSoldier);
-                if (nearestEnemy) {
-                    targetedEnemy = nearestEnemy.soldierId;
-                    if (!clickedOnce)
-                        clickedOnce = true;
-                    else {
-                        clickedOnce = false;
-                        playerFlag.ActiveSoldier.AttackSlot(nearestEnemy.curPositionSlot);
-                        SwapSoldier();
-                    }
-                }
-            }
-
-            // grenade throw
-            if (hitSlot && Input.GetKeyDown(KeyCode.Alpha3)) {
-                attackCommand = 3;
-                uiCommandKey = 2;
-                if (!clickedOnce) {
-                    clickedOnce = true;
-                } else {
-                    clickedOnce = false;
-                    playerFlag.ActiveSoldier.AttackSlot(hitSlot, 1);
-                }
-            }
-            // overwatch
-            if (Input.GetKeyDown(KeyCode.Alpha2)) {
-                attackCommand = 4;
-                uiCommandKey = 1;
-                if (!clickedOnce) {
-                    clickedOnce = true;
-                } else {
-                    clickedOnce = false;
-                    playerFlag.ActiveSoldier.ToOverwatch();
-                    SwapSoldier();
-                }
-            }
-            // reload
-            if (Input.GetKeyDown(KeyCode.R)) {
-                attackCommand = 5;
-                uiCommandKey = 3;
-                if (!clickedOnce) {
-                    clickedOnce = true;
-                } else {
-                    clickedOnce = false;
-                    playerFlag.ActiveSoldier.Reload();
-                    SwapSoldierIfNoTurns();
-                }
-            }
-
-                // FIXED: it will work to click on enemy with right click and then 1.
-                // makes sure you can't do mouse+something else attack
-            if (attackCommand != lastCommand && lastCommand != 0) {
-                clickedOnce = false;
-            }
-
-            // tabbing swaps units
-            if (Input.GetKeyDown(KeyCode.Tab)) {
-                if (targetedEnemy == -1)
-                    SwapSoldier();
-                else {
-                    SwapTarget();
-                }
-            }
-
-            // *** ENEMIES ***
-            // if enemy moves, trigger all overwatched player's soldiers
-
-            // AI: move all enemies
-            for (int i = 0; i < flags[1].units.Count; i++) {
-                // trigger player's overwatch
-                HandleOverwatchWithoutFog(flags[1].units[i], playerFlag);
-            }
-            yield return null;
-        }
-    }
-
-    private void SwapTarget() {
-        targetedEnemy = (targetedEnemy + 1) % flags[1].units.Count;
+    private void SwapTarget(Team activeTeam) {
+        targetedEnemy = (targetedEnemy + 1) % activeTeam.units.Count;
         PlayerCamera.ResetFocus();
     }
 
-    private void SwapSoldierIfNoTurns() {
-        if (playerFlag.ActiveSoldier.actionsLeft == 0) {
-            SwapSoldier();
+    private void SwapSoldierIfNoTurns(Team activeTeam) {
+        if (activeTeam.ActiveSoldier.actionsLeft == 0) {
+            SwapSoldier(activeTeam);
         }
     }
 
-    private void HandleOverwatchWithoutFog(Soldier activeSoldier, Team otherTeam) {
+    private IEnumerator HandleOverwatchWithoutFog(Soldier activeSoldier, Team otherTeam) {
         for (int i = 0; i < otherTeam.units.Count; i++) {
             if (otherTeam.units[i].inOverwatch) {
                 otherTeam.units[i].AttackSlot(activeSoldier.curPositionSlot);
                 otherTeam.units[i].inOverwatch = false;
                 otherTeam.units[i].gun.Fire("Overwatch");
-                otherTeam.units[i].StartCoroutine(otherTeam.units[i].Cinematics_Shoot(activeSoldier.curPositionSlot));
+                yield return otherTeam.units[i].StartCoroutine(otherTeam.units[i].Cinematics_Shoot(activeSoldier.curPositionSlot));
             }
         }
     }
 
-    void SwapSoldier() {
-        if (playerFlag.AnySoldierActionsLeft()) {
-            while (playerFlag.ActiveSoldier.actionsLeft == 0) {
-                playerFlag.NextSoldier();
+    void SwapSoldier(Team activeTeam) {
+        if (activeTeam.AnySoldierActionsLeft()) {
+            while (activeTeam.ActiveSoldier.actionsLeft == 0) {
+                activeTeam.NextSoldier();
             }
             PlayerCamera.ResetFocus();
+        } else {
+            Debug.Log("End turn");
         }
         attackCommand = -1;
         targetedEnemy = -1;
         uiCommandKey = -1;
+    }   
+
+    public IEnumerator TurnCycle(Team team, Team team2) {
+        while (team.AnySoldierActionsLeft()) {
+            int lastCommand = attackCommand;
+            // *** PLAYER ***
+            // Right click on any slot moves active unit there.
+            GridSlot hitSlot = GetGridUnderMouse();
+            if (hitSlot != null) {
+                MapNode[] path = Pathfinding.FindPathAStar(team.ActiveSoldier.curPositionSlot.transform.position, hitSlot.transform.position, MapGrid.wholeMap);
+
+                // mouse clicks
+                if (hitSlot && Input.GetMouseButtonDown(1) && team.ActiveSoldier.NearEnough(path.Length)) {
+                    // shoot at enemy
+                    if (hitSlot.HasEnemy()) {
+                        attackCommand = 1;
+                        uiCommandKey = 0;
+                        // Require 2 clicks to auto attack enemy
+                        if (!clickedOnce)
+                            clickedOnce = true;
+                        else {
+                            clickedOnce = false;
+                            targetedEnemy = hitSlot.taken.soldierId;
+                            //flags[0].MoveActiveToRaycastedPoint(hit);
+                            team.ActiveSoldier.AttackSlot(hitSlot);
+                            SwapSoldier(team);
+                        }
+                    } else {
+                        // move to slot
+                        attackCommand = -1;
+                        targetedEnemy = -1;
+                        uiCommandKey = -1;
+
+                        GameplayManager.m.StartCoroutine(team.ActiveSoldier.MoveToSlot(hitSlot, path));
+                        // enemies in overwatch fire at player's soldier when it moves.
+                        while (team.ActiveSoldier.moving) {
+                            yield return new WaitForSeconds(0.5f);
+                            yield return GameplayManager.m.StartCoroutine(HandleOverwatchWithoutFog(team.ActiveSoldier, team2));
+                        }
+
+                        yield return team.ActiveSoldier.CinematicsDone();
+                        team.ActiveSoldier.HandleCover();
+                        
+                        SwapSoldierIfNoTurns(team);
+                    }
+                }
+
+                // fire at nearest enemy
+                if (Input.GetKeyDown(KeyCode.Alpha1)) {
+                    attackCommand = 2;
+                    uiCommandKey = 0;
+                    Soldier nearestEnemy = team2.GetNearestTo(team.ActiveSoldier);
+                    if (nearestEnemy) {
+                        targetedEnemy = nearestEnemy.soldierId;
+                        if (!clickedOnce)
+                            clickedOnce = true;
+                        else {
+                            clickedOnce = false;
+                            team.ActiveSoldier.AttackSlot(nearestEnemy.curPositionSlot);
+                            SwapSoldier(team);
+                        }
+                    }
+                }
+
+                // grenade throw
+                if (hitSlot && Input.GetKeyDown(KeyCode.Alpha3)) {
+                    attackCommand = 3;
+                    uiCommandKey = 2;
+                    if (!clickedOnce) {
+                        clickedOnce = true;
+                    } else {
+                        clickedOnce = false;
+                        team.ActiveSoldier.AttackSlot(hitSlot, 1);
+                    }
+                }
+                // overwatch
+                if (Input.GetKeyDown(KeyCode.Alpha2)) {
+                    attackCommand = 4;
+                    uiCommandKey = 1;
+                    if (!clickedOnce) {
+                        clickedOnce = true;
+                    } else {
+                        clickedOnce = false;
+                        team.ActiveSoldier.ToOverwatch();
+                        SwapSoldier(team);
+                    }
+                }
+                // reload
+                if (Input.GetKeyDown(KeyCode.R)) {
+                    attackCommand = 5;
+                    uiCommandKey = 3;
+                    if (!clickedOnce) {
+                        clickedOnce = true;
+                    } else {
+                        clickedOnce = false;
+                        team.ActiveSoldier.Reload();
+                        SwapSoldierIfNoTurns(team);
+                    }
+                }
+
+                // FIXED: it will work to click on enemy with right click and then 1.
+                // makes sure you can't do mouse+something else attack
+                if (attackCommand != lastCommand && lastCommand != 0) {
+                    clickedOnce = false;
+                }
+
+                // tabbing swaps units
+                if (Input.GetKeyDown(KeyCode.Tab)) {
+                    if (targetedEnemy == -1)
+                        SwapSoldier(team);
+                    else {
+                        SwapTarget(team);
+                    }
+                }
+
+                // *** ENEMIES *** deprecated
+                // if enemy moves, trigger all overwatched player's soldiers
+
+                // AI: move all enemies
+                /*for (int i = 0; i < team2.units.Count; i++) {
+                    // trigger player's overwatch
+                    HandleOverwatchWithoutFog(team2.units[i], team);
+                }*/
+            }
+            yield return null;
+        }
+    }
+
+    public void Reset(Team team) {
+        for (int i = 0; i < team.units.Count; i++) {
+            team.units[i].ResetActions();
+        }
+    }
+}
+
+/// <summary>
+/// Controls enemy turn/player turn cycle and player's soldier cycle
+/// </summary>
+public class GameplayManager : MonoBehaviour {
+
+    public static GameplayManager m;
+
+    Team[] flags = new Team[2];
+
+    public Team playerFlag { get { return flags[0]; } }
+    public Team enemyFlag { get { return flags[1]; } }
+
+    public static bool IsPlayerTurn { get; internal set; }
+
+    public GlobalUI ui;
+
+    // Use this for initialization
+    void Start() {
+
+        m = this;
+
+        for (int i = 0; i < flags.Length; i++) {
+            flags[i] = new Team();
+        }
+        playerFlag.cycle = new PlayerTurnCycle();
+        enemyFlag.cycle = new EnemyTurnCycle();
+
+        // find and sort all units in scene by their alliance
+        List<Soldier> allUnits = FindObjectsOfType<Soldier>().ToList();
+        for (int i = 0; i < allUnits.Count; i++) {
+            flags[allUnits[i].allianceId].units.Add(allUnits[i]);
+        }
+
+        for (int i = 0; i < flags.Length; i++) {
+            flags[i].SnapAllUnitsToGround();
+        }
+
+        StartCoroutine(TurnHandler());
+    }
+
+    private IEnumerator TurnHandler() {
+        while (true) {
+            for (int i = 0; i < flags.Length; i++) {
+                IsPlayerTurn = i == 0;
+                flags[i].cycle.Reset(flags[i]);
+                if (flags[i].cycle != null) {
+                    yield return StartCoroutine(flags[i].cycle.TurnCycle(flags[i], flags[(i + 1) % flags.Length]));
+                    Debug.Log("End cycle");
+                }
+                Debug.Log("End 1 side turn");
+            }
+            yield return null;
+        }
     }
 }

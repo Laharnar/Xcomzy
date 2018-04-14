@@ -17,11 +17,11 @@ public class GlobalUI:MonoBehaviour {
         for (int i = 0; i < abilitiesUi.Length; i++) {
             abilitiesUi[i].gameObject.SetActive(visible);
         }
-
-        if (GameplayManager.m.uiCommandKey == -1 || visible == false)
+        PlayerTurnCycle ptc = ((PlayerTurnCycle)GameplayManager.m.playerFlag.cycle);
+        if (visible == false || ptc.uiCommandKey == -1)
             selectedSkillCursor.position = new Vector3(-3, 0, 0);
         else
-            selectedSkillCursor.position = abilitiesUi[GameplayManager.m.uiCommandKey].position;
+            selectedSkillCursor.position = abilitiesUi[ptc.uiCommandKey].position;
     }
 
     public void UpdateSelectedEnemyTarget(bool visible) {
@@ -29,9 +29,10 @@ public class GlobalUI:MonoBehaviour {
             targetedEnemiesUi[i].gameObject.SetActive(visible);
         }
 
-        if (GameplayManager.m.targetedEnemy == -1 || visible == false)
-            selectedEnemyCursor.position = new Vector3(0, 0, 0);
+        PlayerTurnCycle ptc = ((PlayerTurnCycle)GameplayManager.m.playerFlag.cycle);
+        if (visible == false || ptc.targetedEnemy == -1)
+            selectedEnemyCursor.position = new Vector3(-3, 0, 0);
         else
-            selectedEnemyCursor.position = targetedEnemiesUi[GameplayManager.m.targetedEnemy].position;
+            selectedEnemyCursor.position = targetedEnemiesUi[ptc.targetedEnemy].position;
     }
 }

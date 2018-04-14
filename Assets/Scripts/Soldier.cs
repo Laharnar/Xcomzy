@@ -59,6 +59,8 @@ public class Soldier : MonoBehaviour {
 
     public Gun gun;
 
+    internal bool moving = false;
+
     private void Start() {
         RegisterSoldier();
         actionsLeft = actions;
@@ -79,34 +81,13 @@ public class Soldier : MonoBehaviour {
 
     internal bool NearEnough(int length) {
         return actionsLeft == 2 ? length <= movementRange1 + movementRange2
-            : actionsLeft == 1 ? length <= movementRange2 : false;
+             : actionsLeft == 1 ? length <= movementRange2 : false;
     }
 
     /*private void TryAttackSlot(RaycastHit hit, SoldierAttack attack) {
         throw new NotImplementedException();
     }*/
 
-    public bool MoveToSlot(GridSlot hitSlot, MapNode[] path, bool cinematics=true) {
-        if (path.Length == 0)
-            return true;
-        ConsumeActions(1);
-
-        if (hitSlot.taken == true)  // can't move on top of other units
-            return false;
-        if (cinematics) {
-            if (path.Length == 0)
-                return false;
-            StartCoroutine(Cinematics_MoveOnPath(path));
-        } else
-            transform.position = hitSlot.transform.position;
-        // change which slots are taken
-        if (curPositionSlot)
-            curPositionSlot.taken = null;
-        hitSlot.taken = this;
-        curPositionSlot = hitSlot;
-        
-        return true;
-    }
     internal void HandleCover() {
         if (animations) {
             if (MapGrid.OnlyGround(curPositionSlot)) {
@@ -120,6 +101,33 @@ public class Soldier : MonoBehaviour {
                 animations.StopAnimation("Crouch");
             }
         }
+    }
+
+
+
+    public IEnumerator MoveToSlot(GridSlot hitSlot, MapNode[] path, bool cinematics=true, bool consumeAction = true) {
+        if (moving) {
+            Debug.Log("Multiple ovelapping coroutine move calls");
+        }
+        moving = false;
+        if (path.Length > 0) {
+            if (consumeAction) {
+                ConsumeActions(1);
+            }
+            if (hitSlot.taken == true)  // can't move on top of other units
+                moving = true;
+            if (cinematics) {
+                yield return StartCoroutine(Cinematics_MoveOnPath(path));
+            } else
+                transform.position = hitSlot.transform.position;
+            // change which slots are taken
+            if (curPositionSlot)
+                curPositionSlot.taken = null;
+            hitSlot.taken = this;
+            curPositionSlot = hitSlot;
+            moving = false;
+        }
+        //return true;
     }
 
     /// <summary>
@@ -143,7 +151,6 @@ public class Soldier : MonoBehaviour {
                     transform.Translate(dir.normalized * slowDown * Time.deltaTime * movementSpeed);
                 }else 
                 if (movementMode == 1) { // >active<moves and rotates towards point, standard for animated characters
-                    Debug.Log("move 1");
                     running = true;
                     Vector3 dir = node.pos - transform.position;
                     float slowDown = i == 0 ? Mathf.Clamp(dir.magnitude, 0f, 1f) : 1f;
@@ -174,6 +181,7 @@ public class Soldier : MonoBehaviour {
             animations.StopAnimation("Run");
         }
     }
+
     private void OnDrawGizmos() {
         Gizmos.color = Color.red;
 
@@ -226,16 +234,26 @@ public class Soldier : MonoBehaviour {
                 ConsumeActions(2);
                 AoeDamage(grenadeRange, hitSlot);
                 StartCoroutine(Cinematics_Throw("Grenade type 1", hitSlot));
-            } else {
+            } else if (attackType == 0) {
                 // single shot
                 gun.Fire("Standard");
                 ConsumeActions(2);
                 Soldier otherUnit = hitSlot.taken;
-                otherUnit.Damage(1);
                 StartCoroutine(Cinematics_Shoot(hitSlot));
+                otherUnit.Damage(1);
+            } else { 
+                // overwatch reaction shot
+                gun.Fire("Overwatch");
+                Soldier otherUnit = hitSlot.taken;
+                StartCoroutine(Cinematics_Shoot(hitSlot));
+                otherUnit.Damage(1);
             }
         }
         return attackCanHappen;
+    }
+
+    internal void ResetActions() {
+        actionsLeft = actions;
     }
 
     private IEnumerator Cinematics_Throw(string projectile, GridSlot hitSlot) {
@@ -289,7 +307,8 @@ public class Soldier : MonoBehaviour {
     }
 
     void ConsumeActions(int num) {
-        actionsLeft = Mathf.Clamp(actionsLeft, 0, actions);
+        actionsLeft = Mathf.Clamp(actionsLeft-num, 0, actions);
+        Debug.Log("Consumed actions: "+num + " Left:"+actionsLeft);
     }
 }
 
