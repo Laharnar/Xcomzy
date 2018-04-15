@@ -9,6 +9,7 @@ public class SoldierUI :MonoBehaviour {
     public Image[] hpUi;
 
     public Image[] ammoUi;
+    public Image ammoBackground;
 
     public Image[] actionsUi;
 
@@ -63,6 +64,8 @@ public class SoldierUI :MonoBehaviour {
     }
 
     public void UpdateAmmoUi(bool visible) {
+        ammoBackground.enabled = visible;
+
         for (int i = 0; i < ammoUi.Length; i++) {
             ammoUi[i].enabled = visible && i < source.gun.ammoLeft;
         }

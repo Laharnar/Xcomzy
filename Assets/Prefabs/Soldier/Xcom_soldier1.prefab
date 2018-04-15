@@ -2341,6 +2341,7 @@ MonoBehaviour:
   - {fileID: 114335889755237794}
   - {fileID: 114940547380378174}
   - {fileID: 114995805138382762}
+  ammoBackground: {fileID: 114321105096458592}
   actionsUi:
   - {fileID: 114712386048452834}
   - {fileID: 114160381826169466}
