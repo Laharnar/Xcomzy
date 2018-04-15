@@ -109,13 +109,13 @@ public class Soldier : MonoBehaviour {
         if (moving) {
             Debug.Log("Multiple ovelapping coroutine move calls");
         }
-        moving = false;
         if (path.Length > 0) {
             if (consumeAction) {
                 ConsumeActions(1);
             }
-            if (hitSlot.taken == true)  // can't move on top of other units
+            if (hitSlot.taken != null)  // can't move on top of other units
                 moving = true;
+            Debug.Log("oving:"+moving + cinematics+hitSlot.taken);
             if (cinematics) {
                 yield return StartCoroutine(Cinematics_MoveOnPath(path));
             } else
@@ -123,10 +123,12 @@ public class Soldier : MonoBehaviour {
             // change which slots are taken
             if (curPositionSlot)
                 curPositionSlot.taken = null;
-            hitSlot.taken = this;
-            curPositionSlot = hitSlot;
+            Debug.Log("oving done");
             moving = false;
         }
+        hitSlot.taken = this;
+        curPositionSlot = hitSlot;
+        transform.position = hitSlot.transform.position;
         //return true;
     }
 
@@ -226,8 +228,7 @@ public class Soldier : MonoBehaviour {
         bool attackCanHappen =
             // gun shot at enemy.
             (attackType == 0 && hitSlot.taken != null && hitSlot.taken.allianceId != allianceId)
-            || attackType == 1;
-
+            || attackType == 1 || attackType == 2;
         if (attackCanHappen) {
             // grenade
             if (attackType == 1) {
@@ -242,6 +243,7 @@ public class Soldier : MonoBehaviour {
                 StartCoroutine(Cinematics_Shoot(hitSlot));
                 otherUnit.Damage(1);
             } else { 
+                Debug.Log("Overwatch reaction");
                 // overwatch reaction shot
                 gun.Fire("Overwatch");
                 Soldier otherUnit = hitSlot.taken;

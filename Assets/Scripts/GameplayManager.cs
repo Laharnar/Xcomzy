@@ -110,16 +110,21 @@ class PlayerTurnCycle : ITurnCycle {
                         targetedEnemy = -1;
                         uiCommandKey = -1;
 
+                        // coroutines seem to take a little time to start, and since they run parallel, moving doesn't start yet.
+                        team.ActiveSoldier.moving = true;
                         GameplayManager.m.StartCoroutine(team.ActiveSoldier.MoveToSlot(hitSlot, path));
                         // enemies in overwatch fire at player's soldier when it moves.
+                        float t = Time.time;
+                        float r = 0.5f;
                         while (team.ActiveSoldier.moving) {
-                            yield return new WaitForSeconds(0.5f);
-                            yield return GameplayManager.m.StartCoroutine(HandleOverwatchWithoutFog(team.ActiveSoldier, team2));
+                            if (Time.time > t) {
+                                t = Time.time + r;
+                                yield return GameplayManager.m.StartCoroutine(HandleOverwatchWithoutFog(team.ActiveSoldier, team2));
+                            }
                         }
-
                         yield return team.ActiveSoldier.CinematicsDone();
                         team.ActiveSoldier.HandleCover();
-                        
+
                         SwapSoldierIfNoTurns(team);
                     }
                 }

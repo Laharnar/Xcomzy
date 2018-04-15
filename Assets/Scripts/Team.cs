@@ -9,12 +9,7 @@ public class Team {
     public Soldier ActiveSoldier { get { return units[activePlayerSoldier]; } }
 
     public ITurnCycle cycle;
-
-    public void InitUnitPos(GridSlot hitSlot) {
-        MapNode[] path = Pathfinding.FindPathAStar(ActiveSoldier.curPositionSlot.transform.position, hitSlot.transform.position, MapGrid.wholeMap);
-        ActiveSoldier.MoveToSlot(hitSlot, path, false);
-    }
-
+    
     public void SnapAllUnitsToGround() {
         for (int i = 0; i < units.Count; i++) {
             Ray ray = new Ray(units[i].transform.position, Vector3.down);
@@ -23,7 +18,10 @@ public class Team {
             if (groundClicked) {
                 GridSlot hitSlot = hit.transform.parent.GetComponent<GridSlot>();
                 units[i].SetCurSlot(hitSlot);
-                InitUnitPos(hitSlot);
+
+                MapNode[] path = Pathfinding.FindPathAStar(units[i].curPositionSlot.transform.position, hitSlot.transform.position, MapGrid.wholeMap);
+                units[i].StartCoroutine(units[i].MoveToSlot(hitSlot, path, false, false));
+
             }
         }
     }
