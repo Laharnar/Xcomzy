@@ -33,6 +33,11 @@ public class GridSlot : MonoBehaviour {
     internal Soldier taken;
 
     public static List<GridSlot> allSlots = new List<GridSlot>();
+
+    internal static Soldier[] GetVisibleEnemySlots(Soldier soldier, Team team2) {
+        return team2.units.ToArray();
+    }
+
     /// <summary>
     /// All positions, even from deleted impassable slots.
     /// </summary>
@@ -108,6 +113,16 @@ public class GridSlot : MonoBehaviour {
         }
         return slots.ToArray();
     }
-    
 
+    internal static GridSlot[] GetAvaliableSlotsInMoveRange(GridSlot slot, float range) {
+        List<GridSlot> slots = new List<GridSlot>();
+        for (int i = 0; i < allSlots.Count; i++) {
+            if (allSlots[i] == null || allSlots[i].taken)
+                continue;
+            if (Vector3.Distance(allSlots[i].transform.position, slot.transform.position) <= range) {
+                slots.Add(allSlots[i]);
+            }
+        }
+        return slots.ToArray();
+    }
 }

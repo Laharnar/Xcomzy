@@ -47,6 +47,18 @@ public class MapGrid:MonoBehaviour {
 
     }
 
+    internal static GridSlot[] GetUntakenCoverInMovementRange(Soldier unit, float fullMovementRange, Team team, Team team2) {
+        throw new NotImplementedException();
+    }
+
+    internal static GridSlot[] GetUntakenCoverInMovementRange(Soldier unit, float fullMovementRange, Soldier[] enemiesInRange) {
+        throw new NotImplementedException();
+    }
+
+    internal static GridSlot[] GetCoverInMovementRange(Soldier unit, float fullMovementRange) {
+        throw new NotImplementedException();
+    }
+
     Vector3 MaxOfXRaycast(Vector3 point, float height) {
         float h1 = GetByRaycast(point + Vector3.forward * 0.01f + Vector3.left * 0.01f, height).point.y;
         float h2 = GetByRaycast(point + Vector3.back * 0.01f + Vector3.left * 0.01f, height).point.y;
@@ -71,6 +83,16 @@ public class MapGrid:MonoBehaviour {
 
     internal static bool OnlyGround(GridSlot curPositionSlot) {
         return AllUnderRange(curPositionSlot, 0.5f);
+    }
+
+    internal static float CoverScoreMultiplier(GridSlot gridSlot) {
+        float f = 1;
+        if (gridSlot.slotType == SlotType.ThinWall) {
+            f = 2.5f;
+        } else if (gridSlot.slotType == SlotType.Impassable) { // NOTE: doesn't distinguish between High and Medium cube wall!
+            f = 5f;
+        }
+        return f;
     }
 
     private SlotType MaxCompatibilityType(RaycastHit h1, SlotType max) {

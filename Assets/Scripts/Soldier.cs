@@ -61,6 +61,8 @@ public class Soldier : MonoBehaviour {
 
     internal bool moving = false;
 
+    public float fullMovementRange { get { return movementRange1 + movementRange2; } }
+
     private void Start() {
         RegisterSoldier();
         actionsLeft = actions;
@@ -90,6 +92,7 @@ public class Soldier : MonoBehaviour {
 
     internal void HandleCover() {
         if (animations) {
+            // TODO: Cover check doesn't work in all directions
             if (MapGrid.OnlyGround(curPositionSlot)) {
                 curCoverHeight = 0;
                 animations.StopAnimation("Crouch");

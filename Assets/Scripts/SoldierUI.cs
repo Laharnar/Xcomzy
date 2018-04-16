@@ -13,17 +13,20 @@ public class SoldierUI :MonoBehaviour {
 
     public Image[] actionsUi;
 
+    public Image isSelectedUi;
 
     private void Update() {
-        bool showGlobalUi = false;
+        bool showGlobalUiForSoldier = false;
         if (GameplayManager.IsPlayerTurn 
             && GameplayManager.m.playerFlag.ActiveSoldier.soldierId == source.soldierId) {
-            showGlobalUi = true;
+            showGlobalUiForSoldier = true;
         }
         UpdateHpUi();
-        UpdateAmmoUi(showGlobalUi);
+        UpdateAmmoUi(showGlobalUiForSoldier);
         UpdateCoverUI();
         UpdateActionsUi(true);
+        if (isSelectedUi)
+            isSelectedUi.enabled = showGlobalUiForSoldier;
     }
 
     public void UpdateCoverUI() {
