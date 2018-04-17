@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class MapGrid:MonoBehaviour {
+
+    static MapGrid m;
+
     public const int pointsPerNode = 4;
 
     public Vector3 pointScale;
@@ -20,8 +23,12 @@ public class MapGrid:MonoBehaviour {
     static List<MapNode> _wholeMap;
     static List<bool> mask;
 
+    public float thinWallMul = 2.5f;
+    public float fatWallMul = 5f;
+
     public static void InitSingleton() {
-        GameObject.FindObjectOfType<MapGrid>().Init();
+        m = GameObject.FindObjectOfType<MapGrid>();
+        m.Init();
     }
 
     //public GridGenerator wh;
@@ -45,18 +52,6 @@ public class MapGrid:MonoBehaviour {
             wholeMap.Add(new MapNode(p3,t3));
         }
 
-    }
-
-    internal static GridSlot[] GetUntakenCoverInMovementRange(Soldier unit, float fullMovementRange, Team team, Team team2) {
-        throw new NotImplementedException();
-    }
-
-    internal static GridSlot[] GetUntakenCoverInMovementRange(Soldier unit, float fullMovementRange, Soldier[] enemiesInRange) {
-        throw new NotImplementedException();
-    }
-
-    internal static GridSlot[] GetCoverInMovementRange(Soldier unit, float fullMovementRange) {
-        throw new NotImplementedException();
     }
 
     Vector3 MaxOfXRaycast(Vector3 point, float height) {
@@ -88,9 +83,9 @@ public class MapGrid:MonoBehaviour {
     internal static float CoverScoreMultiplier(GridSlot gridSlot) {
         float f = 1;
         if (gridSlot.slotType == SlotType.ThinWall) {
-            f = 2.5f;
+            f = m.thinWallMul;
         } else if (gridSlot.slotType == SlotType.Impassable) { // NOTE: doesn't distinguish between High and Medium cube wall!
-            f = 5f;
+            f = m.fatWallMul;
         }
         return f;
     }

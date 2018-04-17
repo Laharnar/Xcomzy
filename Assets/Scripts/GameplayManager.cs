@@ -5,12 +5,15 @@ using System.Linq;
 using UnityEngine;
 
 public interface ITurnCycle {
+
     IEnumerator TurnCycle(Team team, Team team2);
     void Reset(Team team);
 }
+ class EnemyTurnCycle : ITurnCycle {
 
-class EnemyTurnCycle : ITurnCycle {
 
+    public int[] moveScores;
+    public int[] enemyScores;
     public void Reset(Team team) {
         for (int i = 0; i < team.units.Count; i++) {
             team.units[i].ResetActions();
@@ -34,6 +37,7 @@ class EnemyTurnCycle : ITurnCycle {
         //Debug.Log("moving done");
         yield return team.ActiveSoldier.CinematicsDone();
     }
+
     private IEnumerator HandleOverwatchWithoutFog(Soldier activeSoldier, Team otherTeam) {
         for (int i = 0; i < otherTeam.units.Count; i++) {
             if (otherTeam.units[i].inOverwatch) {
@@ -44,6 +48,7 @@ class EnemyTurnCycle : ITurnCycle {
             }
         }
     }
+
     internal void SwapSoldier(Team team) {
         team.NextSoldier();
         PlayerCamera.ResetFocus();
@@ -65,18 +70,15 @@ class EnemyTurnCycle : ITurnCycle {
             //Generate data for all slots in move range and for soldiers in range that can be attacked. taken move slots are excluded.
             GridSlot[] slots = GridSlot.GetAvaliableSlotsInMoveRange(unit.curPositionSlot, unit.fullMovementRange);
             Soldier[] enemiesInRange = GridSlot.GetVisibleEnemySlots(unit, team2);
-            GridSlot[] coverInRange = MapGrid.GetUntakenCoverInMovementRange(unit, unit.fullMovementRange, team, team2);
             AiSlotData[] moveData = new AiSlotData[slots.Length];
             AiSlotData[] enemyData = new AiSlotData[enemiesInRange.Length];
-            AiSlotData[] coverData = new AiSlotData[coverInRange.Length];
+            moveScores = new int[moveData.Length];
+            enemyScores = new int[enemyData.Length];
             for (int j = 0; j < slots.Length; j++) {
                 moveData[j] = new AiSlotData(slots[j].id);
             }
             for (int j = 0; j < enemyData.Length; j++) {
                 enemyData[j] = new AiSlotData(enemiesInRange[j].soldierId);
-            }
-            for (int j = 0; j < coverInRange.Length; j++) {
-                coverData[j] = new AiSlotData(coverInRange[j].id);
             }
             // Calculations have to be remade for every slots for every enemy. Not good.
             // Utility score.
@@ -98,7 +100,7 @@ class EnemyTurnCycle : ITurnCycle {
             if (dist <= unit.movementRange1) {
                 possibleMoveActions = 1;
             }
-            if (dist > unit.movementRange1) {
+            if (enemiesInRange.Length == 0) {
                 possibleMoveActions = 2;
                 attack = -1;
             }
@@ -107,13 +109,15 @@ class EnemyTurnCycle : ITurnCycle {
             int best = 0;
             // calculates scores for movement slots
             for (int j = 0; j < moveData.Length; j++) {
-                moveData[j].score = (int)(MoveClampedDist(unit, unit.fullMovementRange, slots, j) 
+                moveData[j].score = (int)(ClampedReverseDist(unit, unit.fullMovementRange, slots, j) 
                     * MapGrid.CoverScoreMultiplier(slots[j]));
                 if (moveData[j].score > best) {
                     best = moveData[j].score;
                     bestId = j;
                 }
+                moveScores[j] = moveData[j].score;
             }
+                GameplayManager.m.moveScores = moveScores;
             int bestMoveDataId = bestId;
             GridSlot bestMove = slots[bestMoveDataId];
             MapNode[] path = Pathfinding.FindPathAStar(unit.curPositionSlot.transform.position, bestMove.transform.position, MapGrid.wholeMap);
@@ -121,18 +125,26 @@ class EnemyTurnCycle : ITurnCycle {
 
             if (attack != -1) {
                 // calculates scores for enemies
+                bestId = -1;
                 for (int j = 0; j < enemyData.Length; j++) {
-                    enemyData[j].score = (int)(MoveClampedReverseDist(enemiesInRange[j], 1000, slots, j)
+                    enemyData[j].score = (int)(ClampedDist(enemiesInRange[j], 100, slots, j)
                         * MapGrid.CoverScoreMultiplier(enemiesInRange[j].curPositionSlot));
-                    if (moveData[j].score > best) {
-                        best = moveData[j].score;
+                    if (enemyData[j].score > best) {
+                        best = enemyData[j].score;
                         bestId = j;
                     }
+                    enemyScores[j] = enemyData[j].score;
                 }
                 int bestEnemyDataId = bestId;
-                Soldier bestEnemy = enemiesInRange[bestEnemyDataId];
+                if (bestEnemyDataId != -1) {
+                    Soldier bestEnemy = enemiesInRange[bestEnemyDataId];
 
-                unit.AttackSlot(bestEnemy.curPositionSlot);
+                    unit.AttackSlot(bestEnemy.curPositionSlot);
+                    GameplayManager.m.enemyScores = enemyScores;
+
+                } else {
+                    Debug.Log("No enemies in range");
+                }
             }
 
             team.ActiveSoldier.HandleCover();
@@ -140,7 +152,7 @@ class EnemyTurnCycle : ITurnCycle {
         }
     }
 
-    private int MoveClampedDist(Soldier unit, float fullMovementRange, GridSlot[] slots, int j) {
+    private int ClampedDist(Soldier unit, float fullMovementRange, GridSlot[] slots, int j) {
         return (int)Mathf.Clamp(
                         Vector3.Distance(slots[j].transform.position, unit.transform.position), 0f, fullMovementRange);
     }
@@ -152,9 +164,9 @@ class EnemyTurnCycle : ITurnCycle {
     /// <param name="coverInRange"></param>
     /// <param name="j"></param>
     /// <returns></returns>
-    private static int MoveClampedReverseDist(Soldier unit, float maxRange, GridSlot[] coverInRange, int j) {
+    private static int ClampedReverseDist(Soldier unit, float maxRange, GridSlot[] slots, int j) {
         return (int)maxRange - (int)Mathf.Clamp(
-                        Vector3.Distance(coverInRange[j].transform.position, unit.transform.position), 0f, maxRange);
+                        Vector3.Distance(slots[j].transform.position, unit.transform.position), 0f, maxRange);
     }
 
     public class AiSlotData {
@@ -388,6 +400,9 @@ public class GameplayManager : MonoBehaviour {
     public static bool IsPlayerTurn { get; internal set; }
 
     public GlobalUI ui;
+
+    public int[] moveScores;
+    public int[] enemyScores;
 
     // Use this for initialization
     void Start() {
