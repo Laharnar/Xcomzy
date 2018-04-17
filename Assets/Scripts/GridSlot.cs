@@ -2,10 +2,21 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+public enum MapNodeType {
+    Walkable,
+    Climbable,
+    Impassable,
+    OffLimits
+}
+public enum ItemType {
+    Walkable,
+    ThinWall,
+    Impassable,
+}
 
 public enum SlotType {
     Walkable,
-    ThinWall,
+    Cover,
     Impassable,
 }
 /// <summary>
@@ -68,14 +79,18 @@ public class GridSlot : MonoBehaviour {
             1 << LayerMask.NameToLayer(groundLayerName),
             QueryTriggerInteraction.Ignore
             );
-        slotType = SlotType.Impassable;
+        slotType = SlotType.Walkable;
         if (cast) {
             Vector3 point = MapGrid.GetByRaycast(transform.position, 10).point;
+            if (point.y > 0.5f) {
+                Destroy(gameObject);
+            }
+            /*
             if (point.y < 0.5f && point.y >= 0f) {
                 slotType = SlotType.Walkable;
             } else if (point.y >0.5f) {
-                slotType = SlotType.Impassable;
-            }
+                slotType = SlotType.Cover;
+            }*/
             transform.position = hit.point;
         } else { // snap grid slot off map
             transform.position = minDepth;
@@ -84,9 +99,7 @@ public class GridSlot : MonoBehaviour {
 
         slotPositions.Add(gameObject.transform.position);
 
-        if (slotType == SlotType.Impassable) {
-            Destroy(gameObject);
-        }
+        
 
         SetLayer();
 

@@ -14,37 +14,38 @@ public class SoldierUI :MonoBehaviour {
     public Image[] actionsUi;
 
     public Image isSelectedUi;
+    public Image hpBackground;
 
     private void Update() {
         bool showGlobalUiForSoldier = false;
         if (GameplayManager.IsPlayerTurn 
-            && GameplayManager.m.playerFlag.ActiveSoldier.soldierId == source.soldierId) {
+            && GameplayManager.m.playerFlag.ActiveSoldier.soldierId == source.soldierId && GameplayManager.m.drawPlayerUi) {
             showGlobalUiForSoldier = true;
         }
-        UpdateHpUi();
+        UpdateHpUi(GameplayManager.m.drawPlayerUi);
         UpdateAmmoUi(showGlobalUiForSoldier);
-        UpdateCoverUI();
-        UpdateActionsUi(true);
-        if (isSelectedUi)
+        UpdateCoverUI(true);
+        UpdateActionsUi(GameplayManager.m.drawPlayerUi);
+        if (isSelectedUi && GameplayManager.m.drawPlayerUi)
             isSelectedUi.enabled = showGlobalUiForSoldier;
     }
 
-    public void UpdateCoverUI() {
+    public void UpdateCoverUI(bool visible) {
         switch (source.curCoverHeight) {
             case 0:
-                coverNone.enabled = true;
-                coverLow.enabled = false;
-                coverHigh.enabled = false;
+                coverNone.enabled = true && visible;
+                coverLow.enabled = false && visible;
+                coverHigh.enabled = false && visible;
                 break;
             case 1:
-                coverLow.enabled = true;
-                coverNone.enabled = false;
-                coverHigh.enabled = false;
+                coverLow.enabled = true && visible;
+                coverNone.enabled = false && visible;
+                coverHigh.enabled = false && visible;
                 break;
             case 2:
-                coverHigh.enabled = true;
-                coverNone.enabled = false;
-                coverLow.enabled = false;
+                coverHigh.enabled = true && visible;
+                coverNone.enabled = false && visible;
+                coverLow.enabled = false && visible;
                 break;
         }
         /*switch (source.curCoverHeight) {
@@ -60,9 +61,12 @@ public class SoldierUI :MonoBehaviour {
         }*/
     }
 
-    public void UpdateHpUi() {
+    public void UpdateHpUi(bool visible) {
+        if (hpBackground!= null) {
+            hpBackground.enabled = visible;
+        }
         for (int i = 0; i < hpUi.Length; i++) {
-            hpUi[i].enabled = i < source.hp;
+            hpUi[i].enabled = i < source.hp && visible;
         }
     }
 

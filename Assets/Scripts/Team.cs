@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -9,13 +10,13 @@ public class Team {
     public Soldier ActiveSoldier { get { return units[activePlayerSoldier]; } }
 
     public ITurnCycle cycle;
-    
+
     public void SnapAllUnitsToGround() {
         for (int i = 0; i < units.Count; i++) {
             Ray ray = new Ray(units[i].transform.position, Vector3.down);
             RaycastHit hit;
-            bool groundClicked = Physics.Raycast(ray, out hit, Mathf.Infinity, 1 << LayerMask.NameToLayer(GridSlot.gridLayerName), QueryTriggerInteraction.Ignore);
-            if (groundClicked) {
+            bool aboveGround = Physics.Raycast(ray, out hit, Mathf.Infinity, 1 << LayerMask.NameToLayer(GridSlot.gridLayerName), QueryTriggerInteraction.Ignore);
+            if (aboveGround) {
                 GridSlot hitSlot = hit.transform.parent.GetComponent<GridSlot>();
                 units[i].SetCurSlot(hitSlot);
 
@@ -25,6 +26,13 @@ public class Team {
             }
         }
     }
+    public IEnumerator HandleCoverForAll() {
+        yield return new WaitForSeconds(0.5f);
+        for (int i = 0; i < units.Count; i++) {
+            units[i].StartCoroutine(units[i].HandleCoverAfterMovement());
+        }
+    }
+
 
     internal Soldier GetNearestTo(Soldier soldier) {
         if (units.Count == 0)

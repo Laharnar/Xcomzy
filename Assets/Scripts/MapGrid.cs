@@ -35,16 +35,16 @@ public class MapGrid:MonoBehaviour {
     void Init() {//Start
 
         wholeMap = new List<MapNode>();
-        // detect map
+        // detect map height at different points from center
         for (int i = 0; i < GridSlot.slotPositions.Count; i++) {
             Vector3 p0 = MaxOfXRaycast(GridSlot.slotPositions[i], 10);
             Vector3 p1 = MaxOfXRaycast(GridSlot.slotPositions[i] + Vector3.right * pointScale.x, 10);
             Vector3 p2 = MaxOfXRaycast(GridSlot.slotPositions[i] + Vector3.forward * pointScale.z, 10);
             Vector3 p3 = MaxOfXRaycast(GridSlot.slotPositions[i] + Vector3.forward * pointScale.z + Vector3.right * pointScale.x, 10);
-            SlotType t0 = MaxTypeOfXRaycast(GridSlot.slotPositions[i], 10);
-            SlotType t1 = MaxTypeOfXRaycast(GridSlot.slotPositions[i] + Vector3.right * pointScale.x, 10);
-            SlotType t2 = MaxTypeOfXRaycast(GridSlot.slotPositions[i] + Vector3.forward * pointScale.z, 10);
-            SlotType t3 = MaxTypeOfXRaycast(GridSlot.slotPositions[i] + Vector3.forward * pointScale.z + Vector3.right * pointScale.x, 10);
+            MapNodeType t0 = MaxTypeOfXRaycast(GridSlot.slotPositions[i], 10);
+            MapNodeType t1 = MaxTypeOfXRaycast(GridSlot.slotPositions[i] + Vector3.right * pointScale.x, 10);
+            MapNodeType t2 = MaxTypeOfXRaycast(GridSlot.slotPositions[i] + Vector3.forward * pointScale.z, 10);
+            MapNodeType t3 = MaxTypeOfXRaycast(GridSlot.slotPositions[i] + Vector3.forward * pointScale.z + Vector3.right * pointScale.x, 10);
             // all slots are walkable if it's ground.
             wholeMap.Add(new MapNode(p0,t0));
             wholeMap.Add(new MapNode(p1,t1));
@@ -54,6 +54,12 @@ public class MapGrid:MonoBehaviour {
 
     }
 
+    /// <summary>
+    /// Max height of 4 points around selected point.
+    /// </summary>
+    /// <param name="point"></param>
+    /// <param name="height"></param>
+    /// <returns></returns>
     Vector3 MaxOfXRaycast(Vector3 point, float height) {
         float h1 = GetByRaycast(point + Vector3.forward * 0.01f + Vector3.left * 0.01f, height).point.y;
         float h2 = GetByRaycast(point + Vector3.back * 0.01f + Vector3.left * 0.01f, height).point.y;
@@ -62,12 +68,18 @@ public class MapGrid:MonoBehaviour {
         return new Vector3(point.x,Mathf.Max(h1, h2, h3, h4),  point.z);
     }
 
-    SlotType MaxTypeOfXRaycast(Vector3 point, float height) {
+    /// <summary>
+    /// Max type of slot(walkable, impassable...) around some point.
+    /// </summary>
+    /// <param name="point"></param>
+    /// <param name="height"></param>
+    /// <returns></returns>
+    MapNodeType MaxTypeOfXRaycast(Vector3 point, float height) {
         RaycastHit h1 = GetByRaycast(point + Vector3.forward * 0.01f + Vector3.left * 0.01f, height);
         RaycastHit h2 = GetByRaycast(point + Vector3.back * 0.01f + Vector3.left * 0.01f, height);
         RaycastHit h3 = GetByRaycast(point + Vector3.forward * 0.01f + Vector3.right * 0.01f, height);
         RaycastHit h4 = GetByRaycast(point + Vector3.back * 0.01f + Vector3.right * 0.01f, height);
-        SlotType max = SlotType.Walkable;
+        MapNodeType max = MapNodeType.Walkable;
         //        Debug.Log(h1.transform);
         max = MaxCompatibilityType(h1, max);
         max = MaxCompatibilityType(h2, max);
@@ -77,25 +89,25 @@ public class MapGrid:MonoBehaviour {
     }
 
     internal static bool OnlyGround(GridSlot curPositionSlot) {
-        return AllUnderRange(curPositionSlot, 0.5f);
+        return AllNeighboursUnderRange(curPositionSlot, 0.5f);
     }
 
     internal static float CoverScoreMultiplier(GridSlot gridSlot) {
         float f = 1;
-        if (gridSlot.slotType == SlotType.ThinWall) {
+        if (gridSlot.slotType == SlotType.Cover) {
             f = m.thinWallMul;
-        } else if (gridSlot.slotType == SlotType.Impassable) { // NOTE: doesn't distinguish between High and Medium cube wall!
+        } else if (gridSlot.slotType == SlotType.Cover) { // NOTE: doesn't distinguish between High and Medium cube wall!
             f = m.fatWallMul;
         }
         return f;
     }
 
-    private SlotType MaxCompatibilityType(RaycastHit h1, SlotType max) {
+    private MapNodeType MaxCompatibilityType(RaycastHit h1, MapNodeType max) {
         if (h1.transform != null) {
             LevelItemType c = h1.transform.GetComponent<LevelItemType>();
             if (c == null) { Debug.LogError("Err: missing level  item type"+h1.transform.name, h1.transform); }
             else
-                max = (SlotType)Mathf.Max((int)max, (int)c.itemPassabilityType);
+                max = (MapNodeType)Mathf.Max((int)max, (int)c.itemPassabilityType);
         }
         return max;
     }
@@ -110,17 +122,18 @@ public class MapGrid:MonoBehaviour {
         for (int i = 0; i < wholeMap.Count; i++) {
             float h = 0.5f;
             Gizmos.color = Color.red;
-            if (wholeMap[i].nodeType == SlotType.Walkable) {
+            if (wholeMap[i].nodeType == MapNodeType.Walkable) {
                 Gizmos.color = Color.green;
                 h = 0.5f;
             }
-            if (wholeMap[i].nodeType == SlotType.ThinWall) {
+            if (wholeMap[i].nodeType == MapNodeType.Climbable) {
                 Gizmos.color = Color.yellow;
                 h = 2f;
             }
             Gizmos.DrawLine(wholeMap[i].pos, wholeMap[i].pos + Vector3.up*h);
         }
     }
+
     public static RaycastHit GetByRaycast(Vector3 vec, float raycastFromHeight, float minHeight = -10) {
         RaycastHit hit;
         Ray ray = new Ray(new Vector3(vec.x, vec.y+raycastFromHeight, vec.z),
@@ -144,10 +157,10 @@ public class MapGrid:MonoBehaviour {
     /// <param name="curPositionSlot"></param>
     /// <returns></returns>
     internal static bool OnlyLowCover(GridSlot curPositionSlot) {
-        return AllUnderRange(curPositionSlot, 3);
+        return AllNeighboursUnderRange(curPositionSlot, 3);
     }
 
-    private static bool AllUnderRange(GridSlot curPositionSlot, float range) {
+    private static bool AllNeighboursUnderRange(GridSlot curPositionSlot, float range) {
         int id = curPositionSlot.id * 4;
         /* neighbours mid-path cover: 
         right:id; i+1, forw:i+2, 
@@ -160,14 +173,15 @@ public class MapGrid:MonoBehaviour {
             id-3,//-4+1,
             id+GridGenerator.gen.w*4+2
         };
-        bool gotLowCover = AllBelowRange(neighbourIds, range);
+        bool gotLowCover = AreBelowRange(neighbourIds, range);
         return gotLowCover;
     }
 
-    private static bool AllBelowRange(int[] neighbourIds, float range) {
-        for (int i = 0; i < neighbourIds.Length; i++) {
-            if (neighbourIds[i] > -1 && neighbourIds[i] < wholeMap.Count) {
-                if (!IsBelowRange(neighbourIds[i], range)) { // low cover or ground
+    private static bool AreBelowRange(int[] ids, float range) {
+        for (int i = 0; i < ids.Length; i++) {
+            if (ids[i] > -1 && ids[i] < wholeMap.Count) {
+                //if (wholeMap[i].nodeType == MapNodeType.Climbable || wholeMap[i].nodeType == MapNodeType.Impassable) { 
+                if (!IsBelowRange(ids[i], range)) { // low cover or ground
                     return false;
                 }
             }

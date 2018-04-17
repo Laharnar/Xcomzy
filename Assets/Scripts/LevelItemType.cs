@@ -4,5 +4,5 @@ using UnityEngine;
 
 public class LevelItemType : MonoBehaviour {
 
-    public SlotType itemPassabilityType;
+    public ItemType itemPassabilityType;
 }

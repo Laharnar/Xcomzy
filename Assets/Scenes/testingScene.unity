@@ -388,6 +388,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   pointScale: {x: 1, y: 1, z: 1}
+  thinWallMul: 2.5
+  fatWallMul: 5
 --- !u!114 &485017736
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -5,9 +5,9 @@ public class MapNode {
     public int id = -1;
     static int idCount;
     static List<MapNode> allNodes = new List<MapNode>();
-    internal SlotType nodeType;
+    internal MapNodeType nodeType;
 
-    public MapNode(Vector3 pos, SlotType nodeType, bool setId = true) {
+    public MapNode(Vector3 pos, MapNodeType nodeType, bool setId = true) {
         this.pos = pos;
         this.nodeType = nodeType;
         if (setId) {
@@ -37,7 +37,6 @@ public class MapNode {
         Debug.Log("No match found");
         return null;
     }
-
 
     internal static MapNode FindNode(int id) {
         for (int i = 0; i < allNodes.Count; i++) {

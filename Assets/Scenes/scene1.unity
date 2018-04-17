@@ -446,6 +446,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   pointScale: {x: 1, y: 1, z: 1}
+  thinWallMul: 2.5
+  fatWallMul: 5
 --- !u!1001 &643801451
 Prefab:
   m_ObjectHideFlags: 0

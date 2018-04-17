@@ -45,6 +45,8 @@ public class Soldier : MonoBehaviour {
 
     SoldierAnimatorController animations;
 
+   
+
     /// <summary>
     /// Use when updating ui.
     /// Values are 0-2, 0 is ground, 1 half cover, 2 full cover.
@@ -71,6 +73,11 @@ public class Soldier : MonoBehaviour {
             Debug.LogWarning("Missing SoldierAnimatorController component on "+name+". Could be intentional.", transform);
         }
     }
+    internal IEnumerator HandleCoverAfterMovement() {
+        yield return StartCoroutine(MovementDone());
+        Debug.Log("handling cover");
+        HandleCover();
+    }
 
     public void SetCurSlot(GridSlot slot) {
         curPositionSlot = slot;
@@ -94,12 +101,15 @@ public class Soldier : MonoBehaviour {
         if (animations) {
             // TODO: Cover check doesn't work in all directions
             if (MapGrid.OnlyGround(curPositionSlot)) {
+                Debug.Log("only ground");
                 curCoverHeight = 0;
                 animations.StopAnimation("Crouch");
             } else if (MapGrid.OnlyLowCover(curPositionSlot)) {
+                Debug.Log("low cover");
                 curCoverHeight = 1;
                 animations.RunAnimation("Crouch");
             } else {
+                Debug.Log("high cover");
                 curCoverHeight = 2;
                 animations.StopAnimation("Crouch");
             }
@@ -107,10 +117,9 @@ public class Soldier : MonoBehaviour {
     }
 
 
-
     public IEnumerator MoveToSlot(GridSlot hitSlot, MapNode[] path, bool cinematics=true, bool consumeAction = true) {
         if (moving) {
-            Debug.Log("Multiple ovelapping coroutine move calls");
+            Debug.LogWarning("Multiple ovelapping coroutine move calls");
         }
         if (path.Length > 0) {
             if (consumeAction) {
@@ -127,8 +136,8 @@ public class Soldier : MonoBehaviour {
             if (curPositionSlot)
                 curPositionSlot.taken = null;
             Debug.Log("oving done");
-            moving = false;
         }
+        moving = false;
         hitSlot.taken = this;
         curPositionSlot = hitSlot;
         transform.position = hitSlot.transform.position;
@@ -192,14 +201,16 @@ public class Soldier : MonoBehaviour {
 
         //if(running)
             Gizmos.DrawRay(transform.position+offset, transform.forward * climbDetectionRange);
+        Gizmos.color = Color.blue;
+
+        Gizmos.DrawRay(transform.position+Vector3.forward*0.8f, Vector3.forward * 2);
     }
 
     RaycastHit UpRaycast(Vector3 point, float len) {
         RaycastHit hit;
         Ray ray = new Ray(point, transform.forward*len);
         bool cast = Physics.Raycast(ray,
-            out hit,
-            len,
+            out hit, len,
             1 << LayerMask.NameToLayer(GridSlot.groundLayerName),
             QueryTriggerInteraction.Ignore
             );
@@ -281,7 +292,11 @@ public class Soldier : MonoBehaviour {
             yield return null;
         }
     }
-
+    internal IEnumerator MovementDone() {
+        while (moving) {
+            yield return null;
+        }
+    }
     public void Damage(int v) {
         hp -= v;
         if (hp<=0) {
@@ -316,7 +331,3 @@ public class Soldier : MonoBehaviour {
         Debug.Log("Consumed actions: "+num + " Left:"+actionsLeft);
     }
 }
-
-/*public abstract class SoldierAttack {
-
-}*/
