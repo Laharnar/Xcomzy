@@ -8,7 +8,7 @@ public partial class RayMap:MonoBehaviour {
 
     public const int pointsPerNode = 4;
 
-    public Vector3 pointScale;
+    public Vector3 pointScale = Vector3.one;// vec.one
     public static List<MapNode> wholeMap {
         get {
             if (_wholeMap == null) {
@@ -33,8 +33,8 @@ public partial class RayMap:MonoBehaviour {
 
     //public GridGenerator wh;
     void Init() {//Start
-
         wholeMap = new List<MapNode>();
+        int climbPoints = 0, walkPoints = 0, highPoints = 0;
         // detect map height at different points from center
         for (int i = 0; i < GridSlot.slotPositions.Count; i++) {
             Vector3 p0 = MaxOfXRaycast(GridSlot.slotPositions[i], 10);
@@ -50,8 +50,32 @@ public partial class RayMap:MonoBehaviour {
             wholeMap.Add(new MapNode(p1,t1));
             wholeMap.Add(new MapNode(p2,t2));
             wholeMap.Add(new MapNode(p3,t3));
+            CountTypes(ref climbPoints, ref walkPoints, ref highPoints, t0);
+            CountTypes(ref climbPoints, ref walkPoints, ref highPoints, t1);
+            CountTypes(ref climbPoints, ref walkPoints, ref highPoints, t2);
+            CountTypes(ref climbPoints, ref walkPoints, ref highPoints, t3);
         }
+        Debug.Log("Generated raymap: Climb:"+climbPoints + " Walk:"+walkPoints + " Inaccessible:"+highPoints);
 
+        GridSlot.AfterRaymapInit();
+    }
+
+    private void CountTypes(ref int climbPoints, ref int walkPoints, ref int highPoints, MapNodeType t1) {
+        switch (t1) {
+            case MapNodeType.Walkable:
+                walkPoints++;
+                break;
+            case MapNodeType.Climbable:
+                climbPoints++;
+                break;
+            case MapNodeType.Inaccesable:
+                highPoints++;
+                break;
+            case MapNodeType.OffLimits:
+                break;
+            default:
+                break;
+        }
     }
 
     /// <summary>
@@ -61,11 +85,14 @@ public partial class RayMap:MonoBehaviour {
     /// <param name="height"></param>
     /// <returns></returns>
     Vector3 MaxOfXRaycast(Vector3 point, float height) {
-        float h1 = GetByRaycast(point + Vector3.forward * 0.01f + Vector3.left * 0.01f, height).point.y;
-        float h2 = GetByRaycast(point + Vector3.back * 0.01f + Vector3.left * 0.01f, height).point.y;
-        float h3 = GetByRaycast(point + Vector3.forward * 0.01f + Vector3.right * 0.01f, height).point.y;
-        float h4 = GetByRaycast(point + Vector3.back * 0.01f + Vector3.right * 0.01f, height).point.y;
-        return new Vector3(point.x,Mathf.Max(h1, h2, h3, h4),  point.z);
+        float max = float.MinValue;
+        Vector3[] pts = Get4Points(point);
+        for (int i = 0; i < 4; i++) {
+            RaycastHit h = GetByRaycast(pts[i], height);
+            if (h.transform!= null)
+                max = Mathf.Max(max,h.point.y);
+        }
+        return new Vector3(point.x, max, point.z);
     }
 
     /// <summary>
@@ -75,25 +102,31 @@ public partial class RayMap:MonoBehaviour {
     /// <param name="height"></param>
     /// <returns></returns>
     MapNodeType MaxTypeOfXRaycast(Vector3 point, float height) {
-        RaycastHit h1 = GetByRaycast(point + Vector3.forward * 0.01f + Vector3.left * 0.01f, height);
-        RaycastHit h2 = GetByRaycast(point + Vector3.back * 0.01f + Vector3.left * 0.01f, height);
-        RaycastHit h3 = GetByRaycast(point + Vector3.forward * 0.01f + Vector3.right * 0.01f, height);
-        RaycastHit h4 = GetByRaycast(point + Vector3.back * 0.01f + Vector3.right * 0.01f, height);
         MapNodeType max = MapNodeType.Walkable;
-        //        Debug.Log(h1.transform);
-        max = MaxCompatibilityType(h1, max);
-        max = MaxCompatibilityType(h2, max);
-        max = MaxCompatibilityType(h3, max);
-        max = MaxCompatibilityType(h4, max);
+        Vector3[] pts = Get4Points(point);
+        for (int i = 0; i < 4; i++) {
+            RaycastHit h = GetByRaycast(pts[i], height);
+            if (h.transform != null)
+            max = MaxCompatibilityType(h, max);
+        }
         return max;
+    }
+
+    internal static Vector3[] Get4Points(Vector3 point) {
+        Vector3[] pts = new Vector3[4];
+        pts[0] = point + Vector3.forward * 0.01f + Vector3.left * 0.01f;
+        pts[1] = point + Vector3.back * 0.01f + Vector3.left * 0.01f;
+        pts[2] = point + Vector3.forward * 0.01f + Vector3.right * 0.01f;
+        pts[3] = point + Vector3.back * 0.01f + Vector3.right * 0.01f;
+        return pts;
     }
 
     internal static MapNode[] Get4Neighbours(int rayMapNodeId) {
         int[] neighbourIds = new int[4] {
             rayMapNodeId+1,
             rayMapNodeId+2,
-            rayMapNodeId-3,//-4+1,
-            rayMapNodeId+GridGenerator.gen.w*4+2
+            rayMapNodeId-2,//-4+2,
+            rayMapNodeId-GridGenerator.gen.w*4+1
         };
         List<MapNode> nbours = new List<MapNode>();
         for (int i = 0; i < neighbourIds.Length; i++) {
@@ -104,11 +137,11 @@ public partial class RayMap:MonoBehaviour {
     }
 
     private MapNodeType MaxCompatibilityType(RaycastHit h1, MapNodeType max) {
-        if (h1.transform != null) {
-            LevelItemType c = h1.transform.GetComponent<LevelItemType>();
-            if (c == null) { Debug.LogError("Err: missing level  item type" + h1.transform.name, h1.transform); } else
-                max = (MapNodeType)Mathf.Max((int)max, (int)c.itemPassabilityType);
-        }
+        LevelItemType c = h1.transform.GetComponent<LevelItemType>();
+        if (c == null) {
+            Debug.LogError("Err: missing level  item type" + h1.transform.name, h1.transform); } 
+        else
+            max = (MapNodeType)Mathf.Max((int)max, (int)c.itemPassabilityType);
         return max;
     }
 

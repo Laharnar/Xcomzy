@@ -5,7 +5,7 @@ using UnityEngine;
 public enum MapNodeType {
     Walkable,
     Climbable,
-    Impassable,
+    Inaccesable, // like high walls.
     OffLimits
 }
 public enum ItemType {
@@ -17,7 +17,7 @@ public enum ItemType {
 public enum SlotType {
     Walkable,
     Cover,
-    Inaccesible///off level items.
+    Inaccesible///higher level items.
 }
 /// <summary>
 /// These grid slots are shown when units want to move.
@@ -84,7 +84,10 @@ public partial class GridSlot : MonoBehaviour {
         if (cast) {
             Vector3 point = RayMap.GetByRaycast(transform.position, 10).point;
             if (point.y > 0.5f) {
-                Destroy(gameObject);
+                Debug.Log("inaccess");
+                gameObject.SetActive(false);
+                slotType = SlotType.Inaccesible;
+                //Destroy(gameObject);
             }
             /*
             if (point.y < 0.5f && point.y >= 0f) {
@@ -106,18 +109,49 @@ public partial class GridSlot : MonoBehaviour {
         allSlots.Add(this);
     }
 
-    public static void SetTypes(RayMap map) {
+    private void OnDrawGizmos() {
+        for (int i = 0; i < allSlots.Count; i++) {
+            if (allSlots[i].slotType == SlotType.Cover) {
+                Gizmos.color = Color.yellow;
+                Gizmos.DrawWireSphere(allSlots[i].transform.position, 0.5f);
+            } else if (allSlots[i].slotType == SlotType.Inaccesible) {
+                Gizmos.color = Color.red;
+                Gizmos.DrawWireSphere(allSlots[i].transform.position, 0.2f);
+            }
+        }
+    }
+
+    public static void AfterRaymapInit() {
+        SetSlotTypes();
+    }
+
+    public static void SetSlotTypes() {
+        int[] types = new int [3];
         for (int i = 0; i < allSlots.Count; i++) {
             MapNode[] nbours = RayMap.Get4Neighbours(allSlots[i].id*4);
 
-            allSlots[i].slotType = SlotType.Walkable;
-            for (int j = 0; j < nbours.Length; j++) {
-                if (nbours[j].nodeType == MapNodeType.Climbable || nbours[j].nodeType == MapNodeType.Impassable) {
+            int t = 0;
+            /*for (int j = 0; j < nbours.Length; j++) {
+               if (nbours[j].nodeType == MapNodeType.Climbable || nbours[j].nodeType == MapNodeType.Inaccesable) {
                     allSlots[i].slotType = SlotType.Cover;
+                    t = 1;
                     break;
                 }
+            }*/
+            if (OnlyGround(allSlots[i])) {
+                allSlots[i].slotType = SlotType.Walkable;
+                t = 0;
+            } else if (allSlots[i].slotType == SlotType.Walkable) {
+                allSlots[i].slotType = SlotType.Cover;
+                t = 1;
+            } else {
+                allSlots[i].slotType = SlotType.Inaccesible;
+                t = 2;
             }
+            types[t]++;
         }
+
+        Debug.Log("Generated slots: Walkable:"+types[0]+" Cover:"+types[1] + " Inaccesible:"+types[2]);
     }
 
     /// <summary>
@@ -125,12 +159,12 @@ public partial class GridSlot : MonoBehaviour {
     /// </summary>
     /// <param name="curPositionSlot"></param>
     /// <returns></returns>
-    internal static bool OnlyLowCover(GridSlot curPositionSlot) {
+    internal static bool MaxLowCover(GridSlot curPositionSlot) {
         return SlotUnderRange(curPositionSlot, 3);
     }
 
     internal static bool OnlyGround(GridSlot curPositionSlot) {
-        return curPositionSlot.slotType == SlotType.Walkable &&  SlotUnderRange(curPositionSlot, 0.5f);
+        return SlotUnderRange(curPositionSlot, 0.5f);
     }
 
     internal static Soldier[] GetVisibleEnemySlots(Soldier soldier, Team team2) {

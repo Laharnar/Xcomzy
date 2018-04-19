@@ -104,7 +104,7 @@ public class Soldier : MonoBehaviour {
                 Debug.Log("only ground");
                 curCoverHeight = 0;
                 animations.StopAnimation("Crouch");
-            } else if (GridSlot.OnlyLowCover(curPositionSlot)) {
+            } else if (GridSlot.MaxLowCover(curPositionSlot)) {
                 Debug.Log("low cover");
                 curCoverHeight = 1;
                 animations.RunAnimation("Crouch");

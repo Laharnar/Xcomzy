@@ -1699,7 +1699,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 1106589498}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 52780fbe06a658849a9d70890896e059, type: 3}
+  m_Script: {fileID: 11500000, guid: cf8670869ddd2e543a49f8fbcf77fdda, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   pointScale: {x: 1, y: 1, z: 1}
