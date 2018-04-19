@@ -20,7 +20,7 @@ public class Team {
                 GridSlot hitSlot = hit.transform.parent.GetComponent<GridSlot>();
                 units[i].SetCurSlot(hitSlot);
 
-                MapNode[] path = Pathfinding.FindPathAStar(units[i].curPositionSlot.transform.position, hitSlot.transform.position, MapGrid.wholeMap);
+                MapNode[] path = Pathfinding.FindPathAStar(units[i].curPositionSlot.transform.position, hitSlot.transform.position, RayMap.wholeMap);
                 units[i].StartCoroutine(units[i].MoveToSlot(hitSlot, path, false, false));
 
             }

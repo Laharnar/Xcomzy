@@ -75,10 +75,10 @@ public static class Pathfinding {
 
             // Assumes 1 layered grid.
             List<MapNode> curNeighbors = new List<MapNode>();
-            AddItem(current.id+1* MapGrid.pointsPerNode, ref curNeighbors, allSlots);
-            AddItem(current.id-1 * MapGrid.pointsPerNode, ref curNeighbors, allSlots);
-            AddItem(current.id- GridGenerator.gen.w * MapGrid.pointsPerNode, ref  curNeighbors, allSlots);
-            AddItem(current.id+ GridGenerator.gen.w * MapGrid.pointsPerNode, ref  curNeighbors, allSlots);
+            AddItem(current.id+1* RayMap.pointsPerNode, ref curNeighbors, allSlots);
+            AddItem(current.id-1 * RayMap.pointsPerNode, ref curNeighbors, allSlots);
+            AddItem(current.id- GridGenerator.gen.w * RayMap.pointsPerNode, ref  curNeighbors, allSlots);
+            AddItem(current.id+ GridGenerator.gen.w * RayMap.pointsPerNode, ref  curNeighbors, allSlots);
 
             foreach (var neighbor in curNeighbors) {
                 if (neighbor == null || neighbor.id == -1)

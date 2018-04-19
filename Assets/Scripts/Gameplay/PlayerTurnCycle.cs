@@ -68,7 +68,7 @@ class PlayerTurnCycle : ITurnCycle {
             // Right click on any slot moves active unit there.
             GridSlot hitSlot = GetGridUnderMouse();
             if (hitSlot != null) {
-                MapNode[] path = Pathfinding.FindPathAStar(team.ActiveSoldier.curPositionSlot.transform.position, hitSlot.transform.position, MapGrid.wholeMap);
+                MapNode[] path = Pathfinding.FindPathAStar(team.ActiveSoldier.curPositionSlot.transform.position, hitSlot.transform.position, RayMap.wholeMap);
 
                 // mouse clicks
                 if (hitSlot && Input.GetMouseButtonDown(1) && team.ActiveSoldier.NearEnough(path.Length)) {

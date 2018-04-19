@@ -100,11 +100,11 @@ public class Soldier : MonoBehaviour {
     internal void HandleCover() {
         if (animations) {
             // TODO: Cover check doesn't work in all directions
-            if (MapGrid.OnlyGround(curPositionSlot)) {
+            if (GridSlot.OnlyGround(curPositionSlot)) {
                 Debug.Log("only ground");
                 curCoverHeight = 0;
                 animations.StopAnimation("Crouch");
-            } else if (MapGrid.OnlyLowCover(curPositionSlot)) {
+            } else if (GridSlot.OnlyLowCover(curPositionSlot)) {
                 Debug.Log("low cover");
                 curCoverHeight = 1;
                 animations.RunAnimation("Crouch");

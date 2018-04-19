@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class MapGrid:MonoBehaviour {
+public partial class RayMap:MonoBehaviour {
 
-    static MapGrid m;
+    static RayMap m;
 
     public const int pointsPerNode = 4;
 
@@ -27,7 +27,7 @@ public class MapGrid:MonoBehaviour {
     public float fatWallMul = 5f;
 
     public static void InitSingleton() {
-        m = GameObject.FindObjectOfType<MapGrid>();
+        m = GameObject.FindObjectOfType<RayMap>();
         m.Init();
     }
 
@@ -88,33 +88,28 @@ public class MapGrid:MonoBehaviour {
         return max;
     }
 
-    internal static bool OnlyGround(GridSlot curPositionSlot) {
-        return AllNeighboursUnderRange(curPositionSlot, 0.5f);
-    }
-
-    internal static float CoverScoreMultiplier(GridSlot gridSlot) {
-        float f = 1;
-        if (gridSlot.slotType == SlotType.Cover) {
-            f = m.thinWallMul;
-        } else if (gridSlot.slotType == SlotType.Cover) { // NOTE: doesn't distinguish between High and Medium cube wall!
-            f = m.fatWallMul;
+    internal static MapNode[] Get4Neighbours(int rayMapNodeId) {
+        int[] neighbourIds = new int[4] {
+            rayMapNodeId+1,
+            rayMapNodeId+2,
+            rayMapNodeId-3,//-4+1,
+            rayMapNodeId+GridGenerator.gen.w*4+2
+        };
+        List<MapNode> nbours = new List<MapNode>();
+        for (int i = 0; i < neighbourIds.Length; i++) {
+            if (neighbourIds[i] > -1 && neighbourIds[i] < wholeMap.Count)
+                nbours.Add(wholeMap[neighbourIds[i]]);
         }
-        return f;
+        return nbours.ToArray();
     }
 
     private MapNodeType MaxCompatibilityType(RaycastHit h1, MapNodeType max) {
         if (h1.transform != null) {
             LevelItemType c = h1.transform.GetComponent<LevelItemType>();
-            if (c == null) { Debug.LogError("Err: missing level  item type"+h1.transform.name, h1.transform); }
-            else
+            if (c == null) { Debug.LogError("Err: missing level  item type" + h1.transform.name, h1.transform); } else
                 max = (MapNodeType)Mathf.Max((int)max, (int)c.itemPassabilityType);
         }
         return max;
-    }
-    
-    static bool IsBelowRange(int id, float range) {
-        // Checks if point is in low cover range
-        return wholeMap[id].pos.y < range;
     }
 
     private void OnDrawGizmos() {
@@ -133,10 +128,24 @@ public class MapGrid:MonoBehaviour {
             Gizmos.DrawLine(wholeMap[i].pos, wholeMap[i].pos + Vector3.up*h);
         }
     }
+}
+
+public partial class RayMap {
+
+    
+    internal static float CoverScoreMultiplier(GridSlot gridSlot) {
+        float f = 1;
+        if (gridSlot.slotType == SlotType.Cover) {
+            f = m.thinWallMul;
+        } else if (gridSlot.slotType == SlotType.Cover) { // NOTE: doesn't distinguish between High and Medium cube wall!
+            f = m.fatWallMul;
+        }
+        return f;
+    }
 
     public static RaycastHit GetByRaycast(Vector3 vec, float raycastFromHeight, float minHeight = -10) {
         RaycastHit hit;
-        Ray ray = new Ray(new Vector3(vec.x, vec.y+raycastFromHeight, vec.z),
+        Ray ray = new Ray(new Vector3(vec.x, vec.y + raycastFromHeight, vec.z),
             Vector3.down);
         bool cast = Physics.Raycast(ray,
             out hit,
@@ -151,39 +160,11 @@ public class MapGrid:MonoBehaviour {
         //return new Vector3(vec.x, minHeight, vec.z);
     }
 
-    /// <summary>
-    /// Detect if slot has only low cover. Useful for determining soldiers animations.
-    /// </summary>
-    /// <param name="curPositionSlot"></param>
-    /// <returns></returns>
-    internal static bool OnlyLowCover(GridSlot curPositionSlot) {
-        return AllNeighboursUnderRange(curPositionSlot, 3);
-    }
-
-    private static bool AllNeighboursUnderRange(GridSlot curPositionSlot, float range) {
-        int id = curPositionSlot.id * 4;
-        /* neighbours mid-path cover: 
-        right:id; i+1, forw:i+2, 
-        left:id-1;i+1
-        back:id+width;i+2
-        */
-        int[] neighbourIds = new int[4] {
-            id+1,
-            id+2,
-            id-3,//-4+1,
-            id+GridGenerator.gen.w*4+2
-        };
-        bool gotLowCover = AreBelowRange(neighbourIds, range);
-        return gotLowCover;
-    }
-
-    private static bool AreBelowRange(int[] ids, float range) {
+    public static bool AllBelowRange(MapNode[] ids, float range) {
         for (int i = 0; i < ids.Length; i++) {
-            if (ids[i] > -1 && ids[i] < wholeMap.Count) {
-                //if (wholeMap[i].nodeType == MapNodeType.Climbable || wholeMap[i].nodeType == MapNodeType.Impassable) { 
-                if (!IsBelowRange(ids[i], range)) { // low cover or ground
-                    return false;
-                }
+            //if (wholeMap[i].nodeType == MapNodeType.Climbable || wholeMap[i].nodeType == MapNodeType.Impassable) { 
+            if (ids[i].pos.y >= range) { // low cover or ground
+                return false;
             }
         }
         return true;

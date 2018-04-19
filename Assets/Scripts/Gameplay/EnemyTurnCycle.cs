@@ -91,7 +91,7 @@ class EnemyTurnCycle : ITurnCycle {
             // calculates scores for movement slots
             for (int j = 0; j < moveData.Length; j++) {
                 moveData[j].score = (int)(ClampedReverseDist(unit, unit.fullMovementRange, slots, j) 
-                    * MapGrid.CoverScoreMultiplier(slots[j]));
+                    * RayMap.CoverScoreMultiplier(slots[j]));
                 if (moveData[j].score > best) {
                     best = moveData[j].score;
                     bestId = j;
@@ -102,7 +102,7 @@ class EnemyTurnCycle : ITurnCycle {
             int bestMoveDataId = bestId;
             // execute best move
             GridSlot bestMove = slots[bestMoveDataId];
-            MapNode[] path = Pathfinding.FindPathAStar(unit.curPositionSlot.transform.position, bestMove.transform.position, MapGrid.wholeMap);
+            MapNode[] path = Pathfinding.FindPathAStar(unit.curPositionSlot.transform.position, bestMove.transform.position, RayMap.wholeMap);
             yield return unit.StartCoroutine(MoveToSlot(team, team2, bestMove, path));
 
             if (attack != -1) {
@@ -110,7 +110,7 @@ class EnemyTurnCycle : ITurnCycle {
                 bestId = -1;
                 for (int j = 0; j < enemyData.Length; j++) {
                     enemyData[j].score = (int)(ClampedReverseDist(enemiesInRange[j], 100, slots, j)
-                        * (10-MapGrid.CoverScoreMultiplier(enemiesInRange[j].curPositionSlot)));
+                        * (10-RayMap.CoverScoreMultiplier(enemiesInRange[j].curPositionSlot)));
                     if (enemyData[j].score > best) {
                         best = enemyData[j].score;
                         bestId = j;
