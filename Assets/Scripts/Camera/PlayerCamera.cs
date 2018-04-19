@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 
 public class PlayerCamera : MonoBehaviour {
 
@@ -7,7 +8,7 @@ public class PlayerCamera : MonoBehaviour {
     public Vector3 defaultOffset;
     public float moveSpeed = 10f;
     Vector3 offset;
-    Vector3 panOffset;
+    Vector3 panAmt;
 
     private void Awake() {
         cam = this;
@@ -18,7 +19,7 @@ public class PlayerCamera : MonoBehaviour {
         
         Vector3 wantedPos = (GameplayManager.m.playerFlag.ActiveSoldier
             .transform.position+ defaultOffset)
-            + panOffset * moveSpeed;// pos behind the active unit+panning offset
+            + panAmt * moveSpeed;// pos behind the active unit+panning offset
         Vector3 dir = wantedPos - transform.position;
         transform.Translate(dir*Mathf.Clamp(dir.magnitude, 0f, 1f)*Time.deltaTime*10f, Space.World);
     }
@@ -44,16 +45,28 @@ public class PlayerCamera : MonoBehaviour {
         }
         offset = off;
         // point offset in cam's direction
-        panOffset = Quaternion.AngleAxis(transform.eulerAngles.y, Vector3.up) * offset;
+        panAmt = Quaternion.AngleAxis(transform.eulerAngles.y, Vector3.up) * offset;
 
     }
 
+    public static void ResetPan() {
+        if (cam != null) {
+            cam.panAmt = Vector3.zero;
+        }
+    }
+
     public static void ResetFocus() {
-        if (cam != null)
+        if (cam != null) {
             cam.offset = Vector3.zero;
+        }
     }
 
     internal static void LockOn(Soldier soldier) {
         //throw new NotImplementedException();
+    }
+
+    internal static void ReFocus(Soldier soldier) {
+        ResetPan();
+        ResetFocus();
     }
 }

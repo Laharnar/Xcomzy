@@ -8,8 +8,13 @@ class PlayerTurnCycle : ITurnCycle {
     public int uiCommandKey { get; private set; } // which type of attack ui is being used active. right click and 1 is same
     public int targetedEnemy { get; private set; }
 
-    void Init() {
+    public PlayerTurnCycle() {
+        Init();
+    }
+
+    public void Init() {
         attackCommand = -1;
+        targetedEnemy = -1;
         uiCommandKey = -1;
     }
 
@@ -33,10 +38,16 @@ class PlayerTurnCycle : ITurnCycle {
             }
         }
     }
-
-    private void SwapTarget(Team activeTeam) {
-        targetedEnemy = (targetedEnemy + 1) % activeTeam.units.Count;
-        PlayerCamera.ResetFocus();
+    private void SwapOneSoldier(Team team) {
+        if (team.AnySoldierActionsLeft()) {
+            while (team.ActiveSoldier.actionsLeft == 0) {
+                team.NextSoldier();
+            }
+            PlayerCamera.ReFocus(team.ActiveSoldier);
+        }
+        attackCommand = -1;
+        targetedEnemy = -1;
+        uiCommandKey = -1;
     }
 
     private void SwapSoldierIfNoTurns(Team team) {
@@ -44,7 +55,7 @@ class PlayerTurnCycle : ITurnCycle {
             while (team.ActiveSoldier.actionsLeft == 0) {
                 team.NextSoldier();
             }
-            PlayerCamera.ResetFocus();
+            PlayerCamera.ReFocus(team.ActiveSoldier);
         }
         attackCommand = -1;
         targetedEnemy = -1;
@@ -54,12 +65,12 @@ class PlayerTurnCycle : ITurnCycle {
     void SwapSoldier(Team activeTeam) {
         if (activeTeam.AnySoldierActionsLeft()) {
             activeTeam.NextSoldier();
-            PlayerCamera.ResetFocus();
+            PlayerCamera.ReFocus(activeTeam.ActiveSoldier);
         }
         attackCommand = -1;
         targetedEnemy = -1;
         uiCommandKey = -1;
-    }   
+    }
 
     public IEnumerator TurnCycle(Team team, Team team2) {
         while (team.AnySoldierActionsLeft()) {
@@ -159,10 +170,12 @@ class PlayerTurnCycle : ITurnCycle {
                 // tabbing swaps units
                 if (Input.GetKeyDown(KeyCode.Tab)) {
                     if (targetedEnemy == -1)
-                        SwapSoldier(team);
+                        SwapSoldierIfNoTurns(team);
                     else {
-                        SwapTarget(team);
+                        targetedEnemy = (targetedEnemy + 1) % (team2).units.Count;
+                        PlayerCamera.ReFocus(team2.units[targetedEnemy]);
                     }
+
                 }
 
                 // *** ENEMIES *** deprecated
@@ -194,7 +207,7 @@ class PlayerTurnCycle : ITurnCycle {
         //Debug.Log("moving done");
         //yield return team.ActiveSoldier.CinematicsDone();
         //team.ActiveSoldier.HandleCover();
-        team.ActiveSoldier.HandleCoverAfterMovement();
+        yield return team.ActiveSoldier.StartCoroutine(team.ActiveSoldier.HandleCoverAfterMovement());
         //Debug.Log("cover check");
         SwapSoldierIfNoTurns(team);
     }

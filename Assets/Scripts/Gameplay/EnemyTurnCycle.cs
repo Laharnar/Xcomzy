@@ -13,6 +13,7 @@ class EnemyTurnCycle : ITurnCycle {
 
     // Handles cover differently.
     public IEnumerator MoveToSlot(Team team, Team team2, GridSlot slot, MapNode[] path) {
+        PlayerCamera.ReFocus(team.ActiveSoldier);
         // coroutines seem to take a little time to start, and since they run parallel, moving doesn't start yet.
         team.ActiveSoldier.moving = true;
         GameplayManager.m.StartCoroutine(team.ActiveSoldier.MoveToSlot(slot, path));
@@ -42,7 +43,7 @@ class EnemyTurnCycle : ITurnCycle {
 
     internal void SwapSoldier(Team team) {
         team.NextSoldier();
-        PlayerCamera.ResetFocus();
+        PlayerCamera.ReFocus(team.ActiveSoldier);
     }
 
     public IEnumerator TurnCycle(Team team, Team team2) {
